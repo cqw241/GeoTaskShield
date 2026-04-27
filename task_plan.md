@@ -1,12 +1,27 @@
-# Task Plan: GeoTaskShield Phase 2 - Algorithms and Privacy
+# Task Plan: GeoTaskShield Phase 3 - Qt Widgets GUI
 
 ## Goal
-Complete Phase 2 of GeoTaskShield by adding additional privacy mechanisms, assignment algorithms, comparative experiment support, and verification while keeping the core logic Qt-independent.
+Add a Qt Widgets desktop GUI for GeoTaskShield while preserving the verified Phase 2 console and core library behavior.
 
 ## Current Phase
-Complete
+Phase 3 complete
+
+## Phase 3 Success Criteria
+- Git repository follows `git_guide.md`: `main`, `develop`, and `feature/phase3-qt-gui` branches exist.
+- GUI code is isolated from core algorithm modules.
+- CMake can still build the existing console executable and tests without Qt GUI enabled.
+- When Qt is available, a Qt Widgets executable can launch, accept simulation parameters, run `SimulationEngine`, display metrics, and draw workers, tasks, and assignments.
+- Existing `GeoTaskShieldCoreTests` still pass.
 
 ## Phases
+
+### Phase 0: Git Initialization
+- [x] Initialize Git repository
+- [x] Add `.gitignore` for generated build and IDE files
+- [x] Commit current Phase 2 baseline on `main`
+- [x] Create `develop`
+- [x] Create `feature/phase3-qt-gui`
+- **Status:** complete
 
 ### Phase 1: Baseline Review and Scope Lock
 - [x] Confirm current Phase 1 MVP structure
@@ -48,6 +63,34 @@ Complete
 - [x] Update planning files with final status and test results
 - **Status:** complete
 
+### Phase 7: Qt GUI Build Integration
+- [x] Add optional Qt Widgets build path in CMake
+- [x] Keep console and tests independent from Qt
+- [x] Add GUI target sources under `GeoTaskShield/gui`
+- **Status:** complete
+
+### Phase 8: GUI Components
+- [x] Add `MainWindow`
+- [x] Add `ParameterPanel`
+- [x] Add `ResultPanel`
+- [x] Add `LogPanel`
+- [x] Add `MapCanvas`
+- **Status:** complete
+
+### Phase 9: GUI Simulation Flow
+- [x] Convert panel inputs into `SimulationConfig`
+- [x] Create privacy and assignment strategies through factories
+- [x] Run `SimulationEngine` from the GUI
+- [x] Display metrics and draw workers/tasks/assignments
+- **Status:** complete
+
+### Phase 10: Verification and Commit
+- [x] Run CMake configure/build
+- [x] Run CTest
+- [x] Build GUI target if Qt is available
+- [x] Commit feature work using commit convention
+- **Status:** complete
+
 ## Key Questions
 1. Should Hungarian matching support tasks requiring multiple workers in Phase 2?
    - Decision: no. Phase 2 implements one-worker-per-task matching and leaves multi-worker assignment for a later extension.
@@ -69,8 +112,11 @@ Complete
 |-------|---------|------------|
 | No planning files existed | 1 | Created `task_plan.md`, `findings.md`, and `progress.md`. |
 | Missing new headers during TDD red builds | 1 | Implemented each missing module after confirming the intended failure. |
+| PowerShell rejected `&&` command separator | 1 | Ran `git add` and `git commit` as separate commands. |
+| GUI smoke test hung behind Windows missing Qt6Core.dll dialog | 1 | Added Qt runtime/plugin environment for CTest and `windeployqt` deployment for GUI target. |
 
 ## Notes
 - The current project is not a git repository, so progress must be tracked in planning files and local file state.
 - Existing build verification uses Visual Studio DevCmd because the normal PowerShell PATH does not expose `cl.exe`/`ninja`.
 - User mentioned Qt-installed CMake/Ninja are available; if VS DevCmd is unavailable later, search Qt install paths for those tools.
+- As of Phase 3, the project is a Git repository. Follow `git_guide.md` for all future git operations.
