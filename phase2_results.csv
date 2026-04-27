@@ -1,0 +1,10 @@
+privacy,algorithm,completed_tasks,total_tasks,completion_rate,average_moving_distance,total_reward,average_privacy_loss,algorithm_runtime_ms
+Grid Privacy,Nearest Greedy,50,50,1,6.80494,2953.94,3.6469,0.0557
+Grid Privacy,Score Greedy,50,50,1,7.13267,2953.94,3.6469,0.0588
+Grid Privacy,Hungarian,50,50,1,6.34434,2953.94,3.6469,4.0379
+K-Anonymity Privacy,Nearest Greedy,50,50,1,7.4688,2953.94,3.6359,0.0453
+K-Anonymity Privacy,Score Greedy,50,50,1,7.41108,2953.94,3.6359,0.0548
+K-Anonymity Privacy,Hungarian,50,50,1,7.52854,2953.94,3.6359,3.7848
+Laplace Noise Privacy,Nearest Greedy,50,50,1,5.86698,2953.94,1.64872,0.0483
+Laplace Noise Privacy,Score Greedy,50,50,1,5.83927,2953.94,1.64872,0.0581
+Laplace Noise Privacy,Hungarian,50,50,1,5.81876,2953.94,1.64872,3.3636

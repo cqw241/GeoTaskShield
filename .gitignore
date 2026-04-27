@@ -1,0 +1,30 @@
+# Build output
+out/
+build/
+
+# Visual Studio local state
+.vs/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+DartConfiguration.tcl
+Testing/
+
+# Ninja
+.ninja_deps
+.ninja_log
+build.ninja
+
+# Compiled binaries and debug symbols
+*.exe
+*.ilk
+*.lib
+*.pdb
+*.obj
+
+# User-local files
+*.user
+*.suo
