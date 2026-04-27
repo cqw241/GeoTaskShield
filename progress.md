@@ -2,6 +2,19 @@
 
 ## Session: 2026-04-27
 
+### README and GitHub Publish
+- **Status:** in progress
+- Actions taken:
+  - Confirmed working tree was clean before starting.
+  - Checked GitHub publish prerequisites.
+  - Found no configured `origin` remote.
+  - Found GitHub CLI `gh` is not installed or not on `PATH`.
+  - Created project `README.md` covering features, layout, build/test commands, GUI, Agent demo, Git Flow, and limitations.
+- Files created/modified:
+  - `README.md` (created)
+- Blocker:
+  - Pushing to GitHub requires either an `origin` remote with credentials or an installed/authenticated GitHub CLI.
+
 ### Phase 4: AIAgent and Experiment Reports
 - **Status:** complete
 - Actions taken:
