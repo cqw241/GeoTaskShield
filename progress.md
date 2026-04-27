@@ -3,13 +3,15 @@
 ## Session: 2026-04-27
 
 ### README and GitHub Publish
-- **Status:** in progress
+- **Status:** blocked on GitHub remote/authentication
 - Actions taken:
   - Confirmed working tree was clean before starting.
   - Checked GitHub publish prerequisites.
   - Found no configured `origin` remote.
   - Found GitHub CLI `gh` is not installed or not on `PATH`.
   - Created project `README.md` covering features, layout, build/test commands, GUI, Agent demo, Git Flow, and limitations.
+  - Committed README work with `docs(readme): add project overview`.
+  - Rechecked push prerequisites after commit; `origin` is still absent, `gh` is still unavailable, and no GitHub token-like environment variable names are present.
 - Files created/modified:
   - `README.md` (created)
 - Blocker:
