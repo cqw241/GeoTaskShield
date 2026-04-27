@@ -30,6 +30,15 @@
             }
         },
         {
+            "name": "x64-debug-qt",
+            "displayName": "x64 Debug with Qt GUI",
+            "inherits": "x64-debug",
+            "cacheVariables": {
+                "GEOTASKSHIELD_BUILD_GUI": "ON",
+                "CMAKE_PREFIX_PATH": "D:/Qt/6.11.0/msvc2022_64"
+            }
+        },
+        {
             "name": "x64-release",
             "displayName": "x64 Release",
             "inherits": "x64-debug",

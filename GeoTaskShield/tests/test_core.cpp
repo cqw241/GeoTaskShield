@@ -14,6 +14,9 @@
 #include "evaluation/MetricsCalculator.h"
 #include "simulation/SimulationEngine.h"
 #include "data/CsvExporter.h"
+#include "agent/ExperimentAgent.h"
+#include "agent/ReportGenerator.h"
+#include "agent/RuleBasedConfigParser.h"
 
 #include <cmath>
 #include <memory>
@@ -32,6 +35,11 @@ void require(bool condition, const std::string& message)
 bool near(double lhs, double rhs, double tolerance = 1e-9)
 {
     return std::fabs(lhs - rhs) <= tolerance;
+}
+
+bool contains(const std::string& value, const std::string& expected)
+{
+    return value.find(expected) != std::string::npos;
 }
 
 } // namespace
@@ -199,6 +207,65 @@ int main()
             "CsvExporter should emit a summary header.");
     require(csv.find("Grid Privacy,Nearest Greedy,2,2") != std::string::npos,
             "CsvExporter should emit experiment metric rows.");
+
+    RuleBasedConfigParser parser;
+    const ExperimentRequest chineseRequest =
+        parser.parse("100 个用户，50 个任务，k=5，使用匈牙利算法");
+    require(chineseRequest.config.workerCount == 100,
+            "RuleBasedConfigParser should parse Chinese worker counts.");
+    require(chineseRequest.config.taskCount == 50,
+            "RuleBasedConfigParser should parse Chinese task counts.");
+    require(chineseRequest.config.privacy.k == 5,
+            "RuleBasedConfigParser should parse k-anonymity values.");
+    require(chineseRequest.privacyType == "k-anonymity",
+            "RuleBasedConfigParser should infer k-anonymity from k prompts.");
+    require(chineseRequest.algorithmType == "hungarian",
+            "RuleBasedConfigParser should parse Hungarian algorithm requests.");
+
+    const ExperimentRequest englishRequest =
+        parser.parse("80 workers, 40 tasks, epsilon=0.5, use laplace and score greedy");
+    require(englishRequest.config.workerCount == 80,
+            "RuleBasedConfigParser should parse English worker counts.");
+    require(englishRequest.config.taskCount == 40,
+            "RuleBasedConfigParser should parse English task counts.");
+    require(near(englishRequest.config.privacy.epsilon, 0.5),
+            "RuleBasedConfigParser should parse epsilon values.");
+    require(englishRequest.privacyType == "laplace",
+            "RuleBasedConfigParser should parse Laplace privacy requests.");
+    require(englishRequest.algorithmType == "score",
+            "RuleBasedConfigParser should parse score greedy requests.");
+
+    const ExperimentRequest comparisonRequest =
+        parser.parse("对比三种隐私机制，50个用户，20个任务，使用最近贪心");
+    require(comparisonRequest.comparePrivacyMechanisms,
+            "RuleBasedConfigParser should detect privacy comparison requests.");
+    require(comparisonRequest.privacyTypes.size() == 3,
+            "Privacy comparison requests should include three mechanisms.");
+    require(comparisonRequest.algorithmType == "nearest",
+            "RuleBasedConfigParser should parse nearest greedy requests.");
+
+    ExperimentReport report;
+    report.requestText = "100 workers, 50 tasks, use grid and nearest";
+    report.rows.push_back(ExperimentReportRow{
+        "Grid Privacy",
+        "Nearest Greedy",
+        EvaluationMetrics{4, 5, 0.8, 12.5, 120.0, 3.2, 0.7}
+    });
+    const std::string markdown = ReportGenerator::toMarkdown(report);
+    require(contains(markdown, "# GeoTaskShield Experiment Report"),
+            "ReportGenerator should emit a Markdown title.");
+    require(contains(markdown, "| Grid Privacy | Nearest Greedy | 4 | 5 | 80.00% |"),
+            "ReportGenerator should emit a Markdown metrics table row.");
+    require(contains(markdown, "Best completion rate"),
+            "ReportGenerator should emit a short summary.");
+
+    ExperimentAgent agent;
+    const ExperimentAgentResult agentResult =
+        agent.run("对比三种隐私机制，30个用户，10个任务，使用匈牙利算法");
+    require(agentResult.report.rows.size() == 3,
+            "ExperimentAgent should run three rows for privacy comparison prompts.");
+    require(contains(agentResult.markdown, "Hungarian"),
+            "ExperimentAgent should include selected algorithm names in the report.");
 
     SimulationEngine engine(
         std::make_unique<GridPrivacy>(),
