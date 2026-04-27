@@ -32,12 +32,21 @@
 | CSV export is a separate `data` module | Export should not pollute algorithm, simulation, or GUI layers. |
 | Console comparison uses factories | The console app now exercises the same strategy creation path intended for future GUI controls. |
 | CSV output path is `phase2_results.csv` in the project working directory | Simple deterministic output for Phase 2 verification and later report generation. |
+| Phase 3 GUI should be an optional Qt Widgets target | This keeps non-Qt console/test builds working on machines without Qt while still supporting GUI builds where Qt is installed. |
+| GUI should call `SimulationEngine` and factories only | This preserves the current strategy-based architecture and avoids duplicating algorithm logic in widgets. |
+| `MapCanvas` should render from `SimulationRunResult` | The result contains generated workers/tasks, privacy-adjusted workers, assignments, and metrics needed for visualization. |
+| Show assigned links using task IDs and worker IDs | `Assignment` stores identifiers rather than indices, so the canvas should build lookup maps before drawing. |
+| CTest needs Qt runtime environment for GUI smoke tests | Without Qt `bin` on `PATH`, Windows opens a missing `Qt6Core.dll` dialog and blocks the test process. |
+| GUI target should deploy Qt runtime after build on Windows | `windeployqt` makes the built GUI executable runnable from its output directory without manual DLL path setup. |
 
 ## Issues Encountered
 | Issue | Resolution |
 |-------|------------|
 | No existing planning files | Created `task_plan.md`, `findings.md`, and `progress.md` in project root. |
 | Normal PowerShell did not expose the MSVC/Ninja build environment earlier | Used Visual Studio DevCmd for all verification commands. |
+| Current project had no Git repository | Initialized Git, committed the Phase 2 baseline on `main`, and created `develop` plus `feature/phase3-qt-gui`. |
+| PowerShell rejected `&&` | Use separate `shell_command` calls for sequential git operations in this environment. |
+| GUI smoke test showed missing `Qt6Core.dll` dialog | Added CTest environment for Qt `PATH` and `QT_PLUGIN_PATH`; added `windeployqt` post-build deployment for the GUI executable. |
 
 ## Resources
 - Project specification: `D:\VS2026_Projects\GeoTaskShield\GeoTaskShield.md`
