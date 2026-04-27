@@ -1,10 +1,19 @@
-# Task Plan: GeoTaskShield Phase 3 - Qt Widgets GUI
+# Task Plan: GeoTaskShield Phase 4 - AIAgent and Experiment Reports
 
 ## Goal
-Add a Qt Widgets desktop GUI for GeoTaskShield while preserving the verified Phase 2 console and core library behavior.
+Add a local natural-language experiment agent and Markdown report generation while preserving the existing console, GUI, and core algorithm behavior.
 
 ## Current Phase
-Phase 3 complete
+Phase 4 complete
+
+## Phase 4 Success Criteria
+- Work happens on `feature/phase4-ai-agent-report` after integrating completed Phase 3 into `develop`.
+- Add `GeoTaskShield/agent` without introducing Qt dependencies into the core.
+- Parse simple Chinese/English natural-language experiment prompts into runnable configuration.
+- Run current simulation pipeline through factories and `SimulationEngine`.
+- Generate Markdown experiment reports.
+- Do not commit API keys or require network access for first-version behavior.
+- Existing CTest targets pass.
 
 ## Phase 3 Success Criteria
 - Git repository follows `git_guide.md`: `main`, `develop`, and `feature/phase3-qt-gui` branches exist.
@@ -91,6 +100,39 @@ Phase 3 complete
 - [x] Commit feature work using commit convention
 - **Status:** complete
 
+### Phase 11: Phase 4 Branch and Design
+- [x] Merge completed `feature/phase3-qt-gui` into `develop`
+- [x] Create `feature/phase4-ai-agent-report`
+- [x] Write Phase 4 design document
+- [x] Write Phase 4 implementation plan
+- **Status:** complete
+
+### Phase 12: Agent Parser
+- [x] Add parser tests
+- [x] Add `ExperimentRequest`
+- [x] Add `RuleBasedConfigParser`
+- **Status:** complete
+
+### Phase 13: Report Generation
+- [x] Add report generator tests
+- [x] Add report data structures
+- [x] Add Markdown generation
+- **Status:** complete
+
+### Phase 14: Experiment Agent
+- [x] Add agent orchestration tests
+- [x] Add `ExperimentAgent`
+- [x] Support single-run and privacy comparison prompts
+- **Status:** complete
+
+### Phase 15: Demo and Verification
+- [x] Add CMake wiring
+- [x] Add `GeoTaskShieldAgentDemo`
+- [x] Run build and CTest
+- [x] Run report demo
+- [x] Commit Phase 4 feature
+- **Status:** complete
+
 ## Key Questions
 1. Should Hungarian matching support tasks requiring multiple workers in Phase 2?
    - Decision: no. Phase 2 implements one-worker-per-task matching and leaves multi-worker assignment for a later extension.
@@ -114,6 +156,7 @@ Phase 3 complete
 | Missing new headers during TDD red builds | 1 | Implemented each missing module after confirming the intended failure. |
 | PowerShell rejected `&&` command separator | 1 | Ran `git add` and `git commit` as separate commands. |
 | GUI smoke test hung behind Windows missing Qt6Core.dll dialog | 1 | Added Qt runtime/plugin environment for CTest and `windeployqt` deployment for GUI target. |
+| PowerShell `Select-String -Recurse` unsupported | 1 | Used `Get-ChildItem -Recurse -File | Select-String` for secret scanning. |
 
 ## Notes
 - The current project is not a git repository, so progress must be tracked in planning files and local file state.
