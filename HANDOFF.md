@@ -2,25 +2,26 @@
 
 更新时间：2026-04-27
 项目路径：`D:\VS2026_Projects\GeoTaskShield`
-当前状态：阶段 1、阶段 2、阶段 3、阶段 4 已完成并通过验收。阶段 5 尚未开始。
-当前开发分支：`feature/phase4-ai-agent-report`
+当前状态：阶段 1、阶段 2、阶段 3、阶段 4、阶段 5 已完成并通过验收。阶段 6 尚未开始。
+当前开发分支：`feature/phase5-experiment-enhancements`
 
 ---
 
 ## 1. 项目概述
 
-GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配仿真系统。当前版本使用 C++20/CMake 实现核心仿真、控制台实验、Qt Widgets GUI 可视化，以及本地规则型 AIAgent 实验报告生成能力。
+GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配仿真系统。当前版本使用 C++20/CMake 实现核心仿真、控制台实验、批量实验、Qt Widgets GUI 可视化，以及本地规则型 AIAgent 实验报告生成能力。
 
 系统当前支持：
 
 - 生成模拟任务与移动用户；
 - 对用户位置进行隐私保护；
 - 使用不同任务分配算法完成任务匹配；
-- 计算完成率、平均真实移动距离、总收益、隐私损失和算法运行时间；
+- 计算完成率、平均真实移动距离、总收益、隐私损失、算法运行时间、负载均衡、公平性、隐私效用比和超时率；
 - 在控制台输出算法对比结果；
 - 导出 CSV 实验结果；
 - 通过 Qt Widgets GUI 选择参数、运行仿真、显示指标和二维分配图；
-- 通过本地规则型 AIAgent 解析自然语言实验请求并生成 Markdown 报告。
+- 通过本地规则型 AIAgent 解析自然语言实验请求并生成 Markdown 报告；
+- 一键运行批量实验并导出 CSV/Markdown 报告。
 
 ---
 
@@ -32,10 +33,11 @@ GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配
 
 | 分支 | 说明 |
 |---|---|
-| `main` | 阶段 2 基线，提交 `42c03a5 chore(repo): initialize project baseline` |
-| `develop` | 已合入阶段 3 Qt GUI，提交 `29f0d8e feat(gui): merge phase 3 Qt GUI` |
+| `main` | 已发布阶段 4 项目状态，远端默认分支 |
+| `develop` | 已合入阶段 4，并同步 GitHub 发布记录 |
 | `feature/phase3-qt-gui` | 阶段 3 功能分支，提交 `3b66cbf feat(gui): add Qt Widgets simulation UI` |
-| `feature/phase4-ai-agent-report` | 当前阶段 4 功能分支，提交 `23e1856 feat(agent): add experiment report agent` |
+| `feature/phase4-ai-agent-report` | 阶段 4 功能分支 |
+| `feature/phase5-experiment-enhancements` | 当前阶段 5 功能分支 |
 
 后续 Git 操作要求：
 
@@ -69,6 +71,7 @@ GeoTaskShield/
     app/
       console/main.cpp
       agent_demo/main.cpp
+      batch_demo/main.cpp
     model/
     simulation/
     privacy/
@@ -76,6 +79,7 @@ GeoTaskShield/
     evaluation/
     data/
     agent/
+    experiment/
     gui/
     tests/test_core.cpp
 ```
@@ -349,7 +353,20 @@ out\build\x64-debug\GeoTaskShield\GeoTaskShieldAgentDemo.exe
 out\build\x64-debug\GeoTaskShield\GeoTaskShieldAgentDemo.exe "对比三种隐私机制，30个用户，10个任务，使用匈牙利算法"
 ```
 
-### 8.3 Qt GUI 构建与测试
+### 8.3 Batch demo
+
+```powershell
+out\build\x64-debug\GeoTaskShield\GeoTaskShieldBatchDemo.exe
+```
+
+默认会输出批量实验 Markdown 报告，并生成：
+
+```text
+phase5_batch_results.csv
+phase5_batch_report.md
+```
+
+### 8.4 Qt GUI 构建与测试
 
 ```powershell
 cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 && cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt && ctest --test-dir out\build\x64-debug-qt --output-on-failure'
@@ -401,9 +418,14 @@ Qt 相关注意：
    - 不调用大模型；
    - 不保存密钥。
 
-6. `GeoTaskShield.cpp` 和 `GeoTaskShield.h` 仍保留在目录中，但当前 CMake 不使用它们作为入口。
+6. 批量实验当前语义：
+   - 使用预设场景列表；
+   - 通过现有工厂和 `SimulationEngine` 执行；
+   - CSV 包含算法运行耗时，重复运行时该列可能有轻微波动。
 
-7. MSVC 构建已给 `GeoTaskShieldCore` 增加 `/utf-8`，用于稳定支持中文 prompt 测试和 demo 字符串。
+7. `GeoTaskShield.cpp` 和 `GeoTaskShield.h` 仍保留在目录中，但当前 CMake 不使用它们作为入口。
+
+8. MSVC 构建已给 `GeoTaskShieldCore` 增加 `/utf-8`，用于稳定支持中文 prompt 测试和 demo 字符串。
 
 ---
 
@@ -413,32 +435,55 @@ Qt 相关注意：
 
 目标：让系统更适合论文/课程项目展示。
 
-建议任务：
+已完成内容：
 
-1. 批量实验：
-   - 多组 worker/task 数量；
-   - 多组 epsilon；
-   - 多组 k；
-   - 多组 grid size。
-2. 增加指标：
-   - 用户负载均衡；
-   - 算法公平性；
-   - 隐私-效用比；
-   - 任务超时率。
-3. 增加图表导出：
-   - CSV；
-   - Markdown；
-   - 后续 Qt Charts。
-4. 完善测试：
-   - 将当前单文件测试拆分为多测试目标；
-   - 可考虑引入 GoogleTest 或 Catch2。
+- 新增扩展指标：
+  - `userLoadStdDev`：worker 任务负载标准差，越低表示越均衡；
+  - `fairnessIndex`：基于 worker 任务负载的 Jain 公平性指数；
+  - `privacyUtilityRatio`：`completionRate / (1 + averagePrivacyLoss)`；
+  - `timeoutRate`：已分配任务中真实移动时间超过 deadline 的比例。
+- 新增批量实验模块：
 
-阶段 5 验收标准：
+```text
+GeoTaskShield/experiment/
+  BatchExperiment.h/.cpp
+  BatchExperimentExporter.h/.cpp
+```
 
-- 能一键跑批量实验；
-- 能生成多算法、多隐私机制、多参数对比表；
-- 能生成适合报告展示的 Markdown/CSV；
-- 结果可复现。
+- 新增批量实验 demo：
+
+```text
+GeoTaskShield/app/batch_demo/main.cpp
+```
+
+- 新增可执行程序：
+
+```text
+GeoTaskShieldBatchDemo
+```
+
+批量实验当前覆盖：
+
+- 多组 worker/task 数量；
+- 多组 epsilon；
+- 多组 k；
+- 多组 grid size；
+- 多组隐私机制和分配算法组合。
+
+批量实验输出：
+
+```text
+phase5_batch_results.csv
+phase5_batch_report.md
+```
+
+阶段 5 验收结果：
+
+- 可一键运行批量实验；
+- 可生成多算法、多隐私机制、多参数对比表；
+- 可生成报告展示用 CSV/Markdown；
+- 核心测试通过；
+- 结果由固定随机种子驱动，除算法运行耗时外可复现。
 
 ### 阶段 6：工程整理与发布
 
@@ -465,15 +510,15 @@ Qt 相关注意：
 
 ## 11. 建议下一步
 
-建议下一轮进入阶段 5：实验能力增强。
+建议下一轮进入阶段 6：工程整理与发布。
 
 最低风险顺序：
 
-1. 新增批量实验配置结构；
-2. 让 `ExperimentAgent` 能返回多组参数实验；
-3. 将 Markdown 报告扩展为批量实验报告；
-4. 将 CSV 导出扩展为批量结果导出；
-5. 增加负载均衡、隐私-效用比等指标；
-6. 再考虑 Qt Charts 或 GUI 报告面板。
+1. 清理或迁移旧入口 `GeoTaskShield.cpp` / `GeoTaskShield.h`；
+2. 拆分当前单文件核心测试，或引入 GoogleTest/Catch2；
+3. 增加 `.clang-format` 和基础代码风格约束；
+4. 整理 README 截图、模块图和阶段 5 输出示例；
+5. 评估 Qt 部署脚本和 Windows 打包流程；
+6. 后续再考虑 Qt Charts 或 GUI 报告面板。
 
-这一顺序能复用当前已经稳定的 `SimulationEngine`、工厂、CSV、Agent 和报告生成能力，不需要先改 GUI 或算法核心。
+这一顺序优先降低工程交付风险，不需要先改动算法核心。

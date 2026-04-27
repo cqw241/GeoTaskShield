@@ -10,10 +10,11 @@ Completed phases:
 - Phase 2: Additional privacy mechanisms, assignment algorithms, comparison experiments, and CSV export.
 - Phase 3: Qt Widgets GUI visualization.
 - Phase 4: Local rule-based AIAgent and Markdown experiment report generation.
+- Phase 5: Batch experiment support, additional metrics, and richer CSV/Markdown export.
 
 Planned next phase:
 
-- Phase 5: Batch experiment support, additional metrics, and richer report/chart export.
+- Phase 6: Engineering cleanup, README/screenshots polish, style rules, and packaging.
 
 ## Features
 
@@ -38,6 +39,9 @@ Planned next phase:
 - Qt Widgets GUI with parameter panel, map canvas, result panel, and log panel.
 - Local natural-language experiment agent.
 - Markdown experiment report generation.
+- Batch experiment runner.
+- Batch CSV and Markdown export.
+- Additional metrics: worker load standard deviation, Jain fairness index, privacy-utility ratio, and timeout rate.
 
 ## Repository Layout
 
@@ -53,6 +57,7 @@ GeoTaskShield/
     app/
       console/
       agent_demo/
+      batch_demo/
     model/
     simulation/
     privacy/
@@ -60,6 +65,7 @@ GeoTaskShield/
     evaluation/
     data/
     agent/
+    experiment/
     gui/
     tests/
 ```
@@ -142,6 +148,19 @@ The current agent is intentionally local and rule-based. It does not call an onl
 
 If a future version integrates Aliyun Bailian or another model provider, API keys must be read from runtime environment variables such as `DASHSCOPE_API_KEY`. Do not commit API keys, generated secrets, or model credentials.
 
+## Batch Experiment Demo
+
+```powershell
+out\build\x64-debug\GeoTaskShield\GeoTaskShieldBatchDemo.exe
+```
+
+The batch demo runs deterministic scenarios across worker/task counts, epsilon, k, and grid size. It prints a Markdown table and writes:
+
+```text
+phase5_batch_results.csv
+phase5_batch_report.md
+```
+
 ## Git Workflow
 
 This project follows the Git Flow rules in `git_guide.md`:
@@ -178,3 +197,4 @@ docs(handoff): update phase 4 status
 - Hungarian assignment supports one task per expanded worker slot, not strict multi-worker task optimization.
 - Laplace privacy is a simulator-level coordinate perturbation, not a full formal differential privacy proof.
 - The AIAgent parser is rule-based and supports common prompt patterns only.
+- Qt Charts integration is not implemented yet; Phase 5 exports report-ready CSV/Markdown instead.

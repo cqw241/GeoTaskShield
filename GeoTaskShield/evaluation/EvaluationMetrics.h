@@ -10,6 +10,10 @@ struct EvaluationMetrics {
     double totalReward{};
     double averagePrivacyLoss{};
     double algorithmRuntimeMs{};
+    double userLoadStdDev{};
+    double fairnessIndex{};
+    double privacyUtilityRatio{};
+    double timeoutRate{};
 };
 
 } // namespace gts
