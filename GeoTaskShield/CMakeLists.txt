@@ -138,3 +138,6 @@ install(FILES
     "${CMAKE_SOURCE_DIR}/phase5_batch_results.csv"
     "${CMAKE_SOURCE_DIR}/phase5_batch_report.md"
     DESTINATION share/GeoTaskShield)
+
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/docs/demo"
+    DESTINATION share/GeoTaskShield/docs)

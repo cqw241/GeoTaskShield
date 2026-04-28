@@ -1,6 +1,6 @@
 param(
     [string]$Preset = "x64-release-qt",
-    [string]$Version = "v0.6.0",
+    [string]$Version = "v0.7.0",
     [string]$VsDevCmd = "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat"
 )
 
@@ -78,6 +78,19 @@ try {
         $source = Join-Path $repoRoot $file
         if (Test-Path -LiteralPath $source) {
             Copy-Item -LiteralPath $source -Destination $stageDir
+        }
+    }
+
+    $docDirs = @(
+        "docs\demo"
+    )
+
+    foreach ($dir in $docDirs) {
+        $source = Join-Path $repoRoot $dir
+        if (Test-Path -LiteralPath $source) {
+            $destination = Join-Path $stageDir $dir
+            New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
+            Copy-Item -LiteralPath $source -Destination $destination -Recurse
         }
     }
 
