@@ -1,6 +1,6 @@
-# Phase 7 GUI Batch Results Implementation Plan
+﻿# Phase 7 GUI Batch Results Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Add a `Batch Results` Qt GUI tab that loads existing Phase 5-style CSV files, filters/sorts results, displays summary records, and draws a single-metric bar chart.
 
@@ -39,7 +39,7 @@
 - Create later: `GeoTaskShield/experiment/BatchResultRecord.h`
 - Create later: `GeoTaskShield/experiment/BatchResultCsvLoader.h/.cpp`
 
-- [ ] **Step 1: Re-read the real Phase 5 CSV header**
+- [x] **Step 1: Re-read the real Phase 5 CSV header**
 
 Run:
 
@@ -53,7 +53,7 @@ Expected header:
 scenario,workers,tasks,grid_size,k,epsilon,privacy,algorithm,completed_tasks,total_tasks,completion_rate,average_moving_distance,total_reward,average_privacy_loss,algorithm_runtime_ms,user_load_stddev,fairness_index,privacy_utility_ratio,timeout_rate
 ```
 
-- [ ] **Step 2: Write failing loader tests**
+- [x] **Step 2: Write failing loader tests**
 
 Add includes near the existing experiment includes:
 
@@ -148,7 +148,7 @@ require(contains(invalidNumberLoad.errorMessage, "workers") &&
         "Invalid numeric errors should include row, column, and raw value.");
 ```
 
-- [ ] **Step 3: Verify RED**
+- [x] **Step 3: Verify RED**
 
 Run:
 
@@ -166,7 +166,7 @@ Expected: build fails because `experiment/BatchResultCsvLoader.h` does not exist
 - Create: `GeoTaskShield/experiment/BatchResultCsvLoader.cpp`
 - Modify: `GeoTaskShield/CMakeLists.txt`
 
-- [ ] **Step 1: Add `BatchResultRecord.h`**
+- [x] **Step 1: Add `BatchResultRecord.h`**
 
 Define:
 
@@ -215,7 +215,7 @@ struct ChartBar {
 }
 ```
 
-- [ ] **Step 2: Add loader API**
+- [x] **Step 2: Add loader API**
 
 Define in `BatchResultCsvLoader.h`:
 
@@ -236,7 +236,7 @@ public:
 }
 ```
 
-- [ ] **Step 3: Implement minimal robust CSV parsing**
+- [x] **Step 3: Implement minimal robust CSV parsing**
 
 Implement in `BatchResultCsvLoader.cpp`:
 
@@ -250,7 +250,7 @@ Implement in `BatchResultCsvLoader.cpp`:
   - `Missing required column: tasks`
   - `Invalid numeric cell at row 2, column workers: not-a-number`
 
-- [ ] **Step 4: Add source to CMake**
+- [x] **Step 4: Add source to CMake**
 
 Add to `GEOTASKSHIELD_CORE_SOURCES`:
 
@@ -258,7 +258,7 @@ Add to `GEOTASKSHIELD_CORE_SOURCES`:
 "experiment/BatchResultCsvLoader.cpp"
 ```
 
-- [ ] **Step 5: Verify GREEN for loader**
+- [x] **Step 5: Verify GREEN for loader**
 
 Run:
 
@@ -275,7 +275,7 @@ Expected: loader tests pass; model tests are not present yet.
 - Create: `GeoTaskShield/experiment/BatchResultModel.h/.cpp`
 - Modify: `GeoTaskShield/CMakeLists.txt`
 
-- [ ] **Step 1: Add failing model tests**
+- [x] **Step 1: Add failing model tests**
 
 Add tests using three `BatchResultRecord` values:
 
@@ -327,11 +327,11 @@ require(bars.size() == 3 &&
         "BatchResultModel should build chart labels from scenario, privacy, and algorithm.");
 ```
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Run the same build command. Expected: fails because `BatchResultModel` APIs do not exist.
 
-- [ ] **Step 3: Implement `BatchResultModel`**
+- [x] **Step 3: Implement `BatchResultModel`**
 
 Define:
 
@@ -377,7 +377,7 @@ std::optional<BatchResultSummary> lowestAveragePrivacyLoss() const;
 std::vector<ChartBar> chartBars(BatchResultMetric metric) const;
 ```
 
-- [ ] **Step 4: Add source to CMake and verify GREEN**
+- [x] **Step 4: Add source to CMake and verify GREEN**
 
 Add:
 
@@ -394,7 +394,7 @@ Run non-Qt tests. Expected: all core tests pass.
 - Create later: `GeoTaskShield/gui/BatchResultsWidget.h/.cpp`
 - Create later: `GeoTaskShield/gui/MetricBarChart.h/.cpp`
 
-- [ ] **Step 1: Add GUI test expectations**
+- [x] **Step 1: Add GUI test expectations**
 
 Add include:
 
@@ -435,7 +435,7 @@ Also add temp CSV helpers and includes if not already present in this file:
 #include <fstream>
 ```
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Run:
 
@@ -452,7 +452,7 @@ Expected: fails because `BatchResultsWidget.h` does not exist.
 - Create: `GeoTaskShield/gui/BatchResultsWidget.h/.cpp`
 - Modify: `GeoTaskShield/CMakeLists.txt`
 
-- [ ] **Step 1: Implement `MetricBarChart`**
+- [x] **Step 1: Implement `MetricBarChart`**
 
 Public API:
 
@@ -479,7 +479,7 @@ Draw behavior:
 - otherwise scale bars by maximum positive visible value;
 - draw short labels and numeric values.
 
-- [ ] **Step 2: Implement `BatchResultsWidget` layout and APIs**
+- [x] **Step 2: Implement `BatchResultsWidget` layout and APIs**
 
 Public API:
 
@@ -521,7 +521,7 @@ Behavior:
 - Summary labels include value plus `scenario | privacy | algorithm`.
 - Table numeric items store values in `Qt::UserRole`.
 
-- [ ] **Step 3: Add GUI sources to CMake**
+- [x] **Step 3: Add GUI sources to CMake**
 
 Add to `GEOTASKSHIELD_GUI_SOURCES`:
 
@@ -530,7 +530,7 @@ Add to `GEOTASKSHIELD_GUI_SOURCES`:
 "gui/BatchResultsWidget.cpp"
 ```
 
-- [ ] **Step 4: Verify widget build**
+- [x] **Step 4: Verify widget build**
 
 Run Qt GUI smoke build. Expected: compiler errors only for `MainWindow` integration if not done yet.
 
@@ -540,7 +540,7 @@ Run Qt GUI smoke build. Expected: compiler errors only for `MainWindow` integrat
 - Modify: `GeoTaskShield/gui/MainWindow.h`
 - Modify: `GeoTaskShield/gui/MainWindow.cpp`
 
-- [ ] **Step 1: Update header**
+- [x] **Step 1: Update header**
 
 Add forward declaration:
 
@@ -554,7 +554,7 @@ Add private member:
 BatchResultsWidget* batchResultsWidget_{};
 ```
 
-- [ ] **Step 2: Update constructor**
+- [x] **Step 2: Update constructor**
 
 Replace direct central layout with:
 
@@ -571,7 +571,7 @@ root->addWidget(tabs);
 
 Keep the existing `QSplitter`, panels, log panel, run button connection, and `runSimulation()` behavior unchanged.
 
-- [ ] **Step 3: Verify GUI GREEN**
+- [x] **Step 3: Verify GUI GREEN**
 
 Run:
 
@@ -590,7 +590,7 @@ Expected: GUI smoke test passes.
 - Modify: `findings.md`
 - Modify: `progress.md`
 
-- [ ] **Step 1: Run full non-Qt verification**
+- [x] **Step 1: Run full non-Qt verification**
 
 ```powershell
 cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 && cmake --preset x64-debug && cmake --build out\build\x64-debug && ctest --test-dir out\build\x64-debug --output-on-failure'
@@ -598,7 +598,7 @@ cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Too
 
 Expected: `1/1` core tests pass.
 
-- [ ] **Step 2: Run full Qt verification**
+- [x] **Step 2: Run full Qt verification**
 
 ```powershell
 cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 && cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt && ctest --test-dir out\build\x64-debug-qt --output-on-failure'
@@ -606,7 +606,7 @@ cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Too
 
 Expected: `2/2` tests pass.
 
-- [ ] **Step 3: Update docs**
+- [x] **Step 3: Update docs**
 
 README should mention:
 
@@ -620,7 +620,7 @@ HANDOFF/progress should record:
 - Core algorithm/Agent/BatchExperiment semantics were not changed.
 - Verification commands and results.
 
-- [ ] **Step 4: Run diff checks**
+- [x] **Step 4: Run diff checks**
 
 ```powershell
 git diff --check
@@ -629,7 +629,7 @@ git status --short
 
 Expected: no whitespace errors; only intended files changed.
 
-- [ ] **Step 5: Commit implementation**
+- [x] **Step 5: Commit implementation**
 
 ```powershell
 git add GeoTaskShield docs README.md HANDOFF.md task_plan.md findings.md progress.md

@@ -14,6 +14,7 @@ Completed phases:
 - Phase 4: Local rule-based AIAgent and Markdown experiment report generation.
 - Phase 5: Batch experiment support, additional metrics, and richer CSV/Markdown export.
 - Phase 6: Engineering cleanup, release packaging, style rules, and `v0.6.0` release preparation.
+- Phase 7: GUI batch CSV result analysis and visualization.
 
 ## Features
 
@@ -35,7 +36,8 @@ Completed phases:
   - algorithm runtime
 - Console 3 x 3 privacy/algorithm comparison.
 - CSV export to `phase2_results.csv`.
-- Qt Widgets GUI with parameter panel, map canvas, result panel, and log panel.
+- Qt Widgets GUI with a Simulation tab and a Batch Results analysis tab.
+- Batch Results CSV loading, filters, summary cards, sortable table, and a lightweight self-drawn bar chart.
 - Local natural-language experiment agent.
 - Markdown experiment report generation.
 - Batch experiment runner.
@@ -144,6 +146,11 @@ out\build\x64-debug-qt\GeoTaskShield\GeoTaskShieldGui.exe
 
 `GeoTaskShieldGui` runs `windeployqt` after build on Windows. Non-Qt executables such as `GeoTaskShield.exe` and `GeoTaskShieldTests.exe` do not need `windeployqt`.
 
+The GUI contains:
+
+- `Simulation`: run a single simulation with parameter controls, map canvas, metrics, and logs.
+- `Batch Results`: open `phase5_batch_results.csv` or a same-structure CSV, filter by privacy/algorithm, select a metric, inspect summary cards, view a bar chart, and sort the detail table.
+
 ### Release Build and Package
 
 Build the Release GUI preset:
@@ -240,4 +247,4 @@ v0.6.0
 - Hungarian assignment supports one task per expanded worker slot, not strict multi-worker task optimization.
 - Laplace privacy is a simulator-level coordinate perturbation, not a full formal differential privacy proof.
 - The AIAgent parser is rule-based and supports common prompt patterns only.
-- Qt Charts integration is not implemented yet; Phase 5 exports report-ready CSV/Markdown instead.
+- The Batch Results tab uses lightweight custom painting rather than Qt Charts.
