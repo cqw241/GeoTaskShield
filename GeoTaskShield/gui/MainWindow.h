@@ -8,6 +8,7 @@
 
 namespace gts {
 
+class AgentAssistantWidget;
 class BatchResultsWidget;
 class LogPanel;
 class MapCanvas;
@@ -27,6 +28,7 @@ private:
     ResultPanel* resultPanel_{};
     LogPanel* logPanel_{};
     BatchResultsWidget* batchResultsWidget_{};
+    AgentAssistantWidget* agentAssistantWidget_{};
     std::optional<SimulationRunResult> lastResult_;
 };
 

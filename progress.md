@@ -1,5 +1,76 @@
 # Progress Log
 
+## Session: 2026-04-28
+
+### Phase 11: Intelligent Experiment Assistant
+- **Status:** complete
+- Actions taken:
+  - Used `planning-with-files` at the user's request.
+  - Restored prior planning context from `task_plan.md`, `findings.md`, and `progress.md`.
+  - Confirmed implementation branch is `feature/phase11-intelligent-assistant`.
+  - Confirmed Phase 11 spec exists at `docs/superpowers/specs/2026-04-28-phase11-intelligent-experiment-assistant-design.md`.
+  - Updated planning files with Phase 11 scope, success criteria, decisions, and execution phases.
+  - Added Phase 11 non-Qt assistant tests to `GeoTaskShield/tests/test_core.cpp`.
+  - Ran the non-Qt test target and confirmed the expected red build on missing `agent/MockLLMAssistant.h`.
+  - Added Qt-free assistant types and implementations under `GeoTaskShield/agent`.
+  - Wired `RuleBasedAssistant.cpp` and `MockLLMAssistant.cpp` into `GeoTaskShieldCore`.
+  - Adjusted lightweight test `require` helpers to print failures and exit instead of opening MSVC Debug Runtime dialogs.
+  - Ran non-Qt assistant/core verification successfully.
+  - Added GUI smoke expectations for the `Agent Assistant` tab and confirmed the expected red build on missing `gui/AgentAssistantWidget.h`.
+  - Added `AgentAssistantWidget` with natural-language input, Analyze, parsed intent preview, Markdown preview, and Markdown export.
+  - Exposed current filtered rows from `BatchResultsWidget`.
+  - Integrated the `Agent Assistant` tab into `MainWindow`.
+  - Ran Qt GUI smoke verification successfully.
+  - Updated README and HANDOFF with Phase 11 user-facing workflow and handoff details.
+  - Ran full non-Qt Debug verification successfully.
+  - Ran full Qt Debug verification successfully.
+  - Ran `git diff --check` successfully; Git only reported expected LF-to-CRLF working-copy warnings.
+  - Ran secret/API-key and network dependency scan over changed files; no matches were found.
+  - Checked new `agent` assistant files for Qt type names; no matches were found.
+- Files created/modified so far:
+  - `docs/superpowers/specs/2026-04-28-phase11-intelligent-experiment-assistant-design.md` (created in prior turn)
+  - `task_plan.md` (updated)
+  - `findings.md` (updated)
+  - `progress.md` (updated)
+  - `GeoTaskShield/tests/test_core.cpp` (modified)
+  - `GeoTaskShield/gui/tests/test_gui_smoke.cpp` (modified)
+  - `GeoTaskShield/agent/ExperimentIntent.h` (created)
+  - `GeoTaskShield/agent/AssistantRequest.h` (created)
+  - `GeoTaskShield/agent/AssistantResponse.h` (created)
+  - `GeoTaskShield/agent/IExperimentAssistant.h` (created)
+  - `GeoTaskShield/agent/RuleBasedAssistant.h/.cpp` (created)
+  - `GeoTaskShield/agent/MockLLMAssistant.h/.cpp` (created)
+  - `GeoTaskShield/CMakeLists.txt` (modified)
+  - `GeoTaskShield/gui/AgentAssistantWidget.h/.cpp` (created)
+  - `GeoTaskShield/gui/BatchResultsWidget.h/.cpp` (modified)
+  - `GeoTaskShield/gui/MainWindow.h/.cpp` (modified)
+  - `README.md` (modified)
+  - `HANDOFF.md` (modified)
+- Next:
+  - Review and merge Phase 11 into `develop`.
+
+## Test Results
+| Test | Input | Expected | Actual | Status |
+|------|-------|----------|--------|--------|
+| Phase 11 core red test | `cmake --build out\build\x64-debug --target GeoTaskShieldTests` after adding assistant tests | Fails because assistant headers do not exist yet | Failed on missing `agent/MockLLMAssistant.h` | Expected fail |
+| Phase 11 first core green attempt | `cmake --preset x64-debug && cmake --build out\build\x64-debug --target GeoTaskShieldTests && ctest --test-dir out\build\x64-debug --output-on-failure -R GeoTaskShieldCoreTests` | Build and core tests pass | Command timed out after 124 seconds before result was available | Retry with longer timeout |
+| Phase 11 core verification | `cmake --preset x64-debug && cmake --build out\build\x64-debug --target GeoTaskShieldTests && ctest --test-dir out\build\x64-debug --output-on-failure -R GeoTaskShieldCoreTests` | Build and core tests pass | `1/1 Test #1: GeoTaskShieldCoreTests Passed` | Pass |
+| Phase 11 GUI red test | `cmake --build out\build\x64-debug-qt --target GeoTaskShieldGuiSmokeTests` after adding assistant tab expectations | Fails because assistant widget does not exist yet | Failed on missing `gui/AgentAssistantWidget.h` | Expected fail |
+| Phase 11 GUI smoke verification | `cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt --target GeoTaskShieldGuiSmokeTests && ctest --test-dir out\build\x64-debug-qt --output-on-failure -R GeoTaskShieldGuiSmokeTests` | Assistant tab and existing GUI smoke tests pass | `1/1 Test #2: GeoTaskShieldGuiSmokeTests Passed` | Pass |
+| Phase 11 full non-Qt verification | `cmake --preset x64-debug && cmake --build out\build\x64-debug && ctest --test-dir out\build\x64-debug --output-on-failure` | Build and core tests pass | `1/1 Test #1: GeoTaskShieldCoreTests Passed` | Pass |
+| Phase 11 full Qt verification | `cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt && ctest --test-dir out\build\x64-debug-qt --output-on-failure` | Qt build, core tests, and GUI smoke tests pass | `2/2 tests passed` | Pass |
+| Phase 11 diff check | `git diff --check` | No whitespace errors | No whitespace errors; only LF-to-CRLF working-copy warnings | Pass |
+| Phase 11 secret/network scan | `Select-String` over changed files for API-key assignments and network API patterns | No matches | No matches | Pass |
+| Phase 11 Qt-free assistant boundary check | `Select-String` over `GeoTaskShield/agent/*.h/.cpp` for Qt type names | No Qt type references | No matches | Pass |
+| Phase 11 review regression red test | `cmake --build out\build\x64-debug --target GeoTaskShieldTests && out\build\x64-debug\GeoTaskShield\GeoTaskShieldTests.exe` after adding Chinese metric/single-privacy comparison tests | Fails before implementation | Failed on Chinese metric parsing | Expected fail |
+| Phase 11 review regression green test | `cmake --build out\build\x64-debug --target GeoTaskShieldTests && out\build\x64-debug\GeoTaskShield\GeoTaskShieldTests.exe` | Chinese metric parsing and single-privacy comparison suggestion pass | Exit code 0 | Pass |
+
+## Error Log
+| Timestamp | Error | Attempt | Resolution |
+|-----------|-------|---------|------------|
+| 2026-04-28 | Phase 11 non-Qt verification timed out after 124 seconds | 1 | Re-run with a longer timeout to distinguish slow MSVC rebuild from a real compile/test failure. |
+| 2026-04-28 | Phase 11 non-Qt verification timed out again because `GeoTaskShieldTests.exe` opened a MSVC Debug Runtime dialog | 2 | Terminated the stale test process, corrected the failing assistant test fixture, and aligned the empty-data Markdown text with the assertion. |
+
 ## Session: 2026-04-27
 
 ### Phase 8: v0.7.0 Release and Demo Hardening
