@@ -38,7 +38,6 @@ GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配
 | `feature/phase3-qt-gui` | 阶段 3 功能分支，提交 `3b66cbf feat(gui): add Qt Widgets simulation UI` |
 | `feature/phase4-ai-agent-report` | 阶段 4 功能分支 |
 | `feature/phase5-experiment-enhancements` | 阶段 5 功能分支，已合入 `develop` |
-| `feature/phase7-gui-batch-results` | 阶段 7 功能分支，已本地合入 `develop` |
 | `release/phase6-engineering-release` | 阶段 6 发布准备分支 |
 
 后续 Git 操作要求：
@@ -455,7 +454,9 @@ out\package\GeoTaskShield-v0.6.0-windows-x64.zip
 
 ---
 
-## 10. 后续开发计划
+## 10. 已完成阶段补充记录
+
+以下内容记录阶段 5 之后的已完成增量，避免把已完成阶段误写成后续计划。
 
 ### 阶段 5：实验能力增强
 
@@ -547,10 +548,6 @@ phase5_batch_report.md
 - `v0.6.0` 发布包生成于 `out\package\GeoTaskShield-v0.6.0-windows-x64.zip`；
 - 发布包属于生成产物，不提交进 Git。
 
----
-
-## 11. 建议下一步
-
 ### 阶段 7：GUI 数据可视化增强
 
 目标：在不改变核心算法、Agent 或 BatchExperiment 语义的前提下，为 Qt GUI 增加批量实验 CSV 结果分析与展示页。
@@ -604,7 +601,9 @@ GeoTaskShield/gui/
 - 未引入 Qt Charts；
 - 未修改 `SimulationEngine`、`PrivacyFactory`、`AssignmentAlgorithmFactory`、Agent 或 `BatchExperiment` 语义。
 
-### 建议后续方向
+---
+
+## 11. 建议下一步
 
 1. 在 GUI 中增加 Markdown 报告预览或导出入口；
 2. 为 Batch Results 增加导出当前筛选结果能力；

@@ -2,7 +2,7 @@
 
 GeoTaskShield is a C++20/CMake simulator for privacy-preserving task allocation in mobile crowdsensing. It models workers and sensing tasks on a 2D map, applies location privacy mechanisms, runs task assignment algorithms, evaluates utility/privacy metrics, and presents results through console, CSV, Qt Widgets GUI, and a local experiment-report agent.
 
-Current release: `v0.6.0`.
+Current release: `v0.6.0`. The `develop` branch includes the completed Phase 7 GUI batch-results visualization work.
 
 ## Current Status
 
