@@ -18,6 +18,10 @@ set(GEOTASKSHIELD_CORE_SOURCES
     "agent/RuleBasedConfigParser.cpp"
     "agent/ReportGenerator.cpp"
     "agent/ExperimentAgent.cpp"
+    "agent/RuleBasedAssistant.cpp"
+    "agent/MockLLMAssistant.cpp"
+    "agent/OpenAICompatibleAssistant.cpp"
+    "agent/WinHttpClient.cpp"
     "experiment/BatchExperiment.cpp"
     "experiment/BatchExperimentExporter.cpp"
     "experiment/BatchResultCsvLoader.cpp"
@@ -46,6 +50,9 @@ endfunction()
 add_library(GeoTaskShieldCore STATIC ${GEOTASKSHIELD_CORE_SOURCES})
 target_include_directories(GeoTaskShieldCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_features(GeoTaskShieldCore PUBLIC cxx_std_20)
+if (WIN32)
+    target_link_libraries(GeoTaskShieldCore PUBLIC winhttp)
+endif()
 geotaskshield_apply_common_options(GeoTaskShieldCore)
 
 add_executable(GeoTaskShield "app/console/main.cpp")
@@ -83,6 +90,7 @@ if (GEOTASKSHIELD_BUILD_GUI)
         HINTS "${GEOTASKSHIELD_QT_PREFIX}/bin")
 
     set(GEOTASKSHIELD_GUI_SOURCES
+        "gui/AgentAssistantWidget.cpp"
         "gui/BatchResultsWidget.cpp"
         "gui/MainWindow.cpp"
         "gui/MapCanvas.cpp"

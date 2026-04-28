@@ -1,7 +1,7 @@
 # GeoTaskShield 技术白皮书
 
 面向移动群智感知的隐私保护任务分配仿真与可视化系统
-当前版本：`v0.8.0`
+当前版本：`v0.9.0`
 
 ## 摘要
 
@@ -76,13 +76,19 @@ GeoTaskShield 当前支持：
 - 提供 Qt Widgets GUI：
   - `Simulation` tab：单次仿真参数、地图、指标和日志。
   - `Batch Results` tab：加载批量 CSV、筛选、排序、摘要卡片、柱状图、当前行详情。
+  - `Agent Assistant` tab：输入自然语言请求，预览结构化实验意图，并基于当前 Batch Results 筛选结果生成 Markdown 分析。
   - `Export Filtered CSV`：导出当前筛选后的批量结果。
   - `Preview Markdown`：预览当前筛选结果的 Markdown 报告。
   - `Export Markdown`：导出当前筛选结果的 Markdown 报告。
+  - `Agent Assistant Export Markdown`：导出智能实验助手生成的 Markdown 分析。
 - 提供本地规则型实验 Agent：
   - 自然语言请求解析。
   - 实验运行。
   - Markdown 报告生成。
+- 提供本地规则型智能实验助手：
+  - 解析 workers、tasks、privacy、algorithm、metric 和 compare intent。
+  - 基于当前 Batch Results 筛选记录总结最佳完成率、最佳隐私效用比、最低隐私损失和最佳公平性。
+  - 生成后续实验建议。
 
 ## 技术架构
 
@@ -150,20 +156,22 @@ flowchart LR
 
 ## 当前发布版本
 
-当前 release：`v0.8.0`
+当前 release：`v0.9.0`
 
-`v0.8.0` 固化了 Phase 9 的 GUI 导出能力：
+`v0.9.0` 固化了 Phase 11/12 的智能实验助手和可选真实 LLM provider 能力：
 
 - `Batch Results` 当前筛选 CSV 导出。
 - Markdown 报告预览。
 - Markdown 报告导出。
+- `Agent Assistant` 本地规则分析、Markdown 预览和导出。
+- 可选 Aliyun Bailian / DashScope provider，默认不作为主演示依赖。
 - Qt-free 批量结果 CSV/Markdown 字符串生成。
-- v0.8.0 GUI 演示指南。
+- v0.9.0 GUI 演示指南。
 
 发布包默认输出：
 
 ```text
-out/package/GeoTaskShield-v0.8.0-windows-x64.zip
+out/package/GeoTaskShield-v0.9.0-windows-x64.zip
 ```
 
 ## 构建环境
@@ -225,7 +233,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package_windows.ps1
 打包输出：
 
 ```text
-out/package/GeoTaskShield-v0.8.0-windows-x64.zip
+out/package/GeoTaskShield-v0.9.0-windows-x64.zip
 ```
 
 ## GUI 演示流程
@@ -250,11 +258,42 @@ out/package/GeoTaskShield-v0.8.0-windows-x64.zip
 8. 点击 `Preview Markdown` 预览当前筛选结果报告。
 9. 点击 `Export Markdown` 导出 Markdown 报告。
 
+### Agent Assistant tab
+
+1. 先在 `Batch Results` tab 加载 `phase5_batch_results.csv`，并按需设置 Privacy / Algorithm 筛选。
+2. 打开 `Agent Assistant` tab。
+3. 在自然语言输入框中输入实验分析请求，例如：
+
+```text
+Compare privacy mechanisms for 50 tasks and explain completion rate, privacy utility, privacy loss, and fairness.
+```
+
+4. 点击 `Analyze`。
+5. 查看解析出的实验意图和 Markdown 分析结果。
+6. 点击 `Export Markdown` 导出助手生成的 Markdown 分析。
+
 详细演示脚本见：
 
 ```text
-docs/demo/v0.8.0-gui-demo-guide.md
+docs/demo/v0.9.0-gui-demo-guide.md
 ```
+
+### Optional LLM provider (Phase 12)
+
+`Agent Assistant` defaults to `Local rule-based`, so the GUI still works without
+network access or credentials. To use Aliyun Bailian / DashScope, select
+`Aliyun Bailian (DashScope)` in the provider selector and configure:
+
+```powershell
+$env:DASHSCOPE_API_KEY = "<your DashScope API key>"
+$env:DASHSCOPE_MODEL = "kimi-k2.5"
+$env:DASHSCOPE_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+```
+
+`DASHSCOPE_API_KEY` is required for the real provider. `DASHSCOPE_MODEL`
+defaults to `kimi-k2.5`, and `DASHSCOPE_BASE_URL` defaults to the Beijing
+OpenAI-compatible endpoint. API keys must stay in the local environment and must
+not be written into source, docs, tests, reports, or commits.
 
 ## 示例自然语言 Agent 输入
 
@@ -264,7 +303,7 @@ docs/demo/v0.8.0-gui-demo-guide.md
 对比三种隐私机制，50个用户，20个任务，使用最近贪心
 ```
 
-当前 Agent 使用本地规则解析，不调用在线 LLM。
+默认 Agent 使用本地规则解析；`Agent Assistant` 可选接入 DashScope provider，但只有用户显式选择并配置环境变量时才会调用在线服务。
 
 ## 版本演进
 
@@ -280,22 +319,24 @@ docs/demo/v0.8.0-gui-demo-guide.md
 | Phase 8 | `v0.7.0` Release and Demo Hardening |
 | Phase 9 | GUI 筛选 CSV 导出、Markdown 预览/导出 |
 | Phase 10 | `v0.8.0` Release and Demo Hardening |
+| Phase 11 | 离线智能实验助手、GUI 自然语言入口、当前 Batch Results 本地分析 |
+| Phase 12 | Optional OpenAI-compatible LLM provider for Agent Assistant, default-off and environment-variable configured |
+| Demo Readiness | `v0.9.0` Release hardening, demo guide, package verification |
 
 ## 当前限制
 
 - 核心测试使用轻量自定义断言，尚未迁移到 GoogleTest 或 Catch2。
 - Hungarian 算法当前支持一任务对应一个展开 worker slot，不是严格多 worker 协同任务优化模型。
 - Laplace 隐私是仿真层面的坐标扰动，不是完整差分隐私证明实现。
-- Agent 当前为规则型解析器，不调用在线大模型。
+- Agent 和 Agent Assistant 默认使用本地规则型实现；Phase 12 的 DashScope provider 为可选入口，只从环境变量读取 API key，不保存密钥。
 - Batch Results 图表使用自绘轻量柱状图，尚未引入 Qt Graphs 或 Qt Charts。
 
 ## 后续扩展建议
 
 面向下一阶段智能化扩展，可以优先考虑：
 
-- 将规则型 Agent 扩展为 LLM-assisted experiment planner。
-- 让 Agent 根据批量 CSV 自动生成对比分析结论。
-- 在 GUI 中加入自然语言实验入口。
+- 继续完善 `IExperimentAssistant` 的真实 LLM provider，例如异步调用、超时控制和更细粒度的提示词模板。
+- 支持多轮实验助手上下文和更细粒度的参数建议。
 - 支持更多隐私保护机制和任务分配算法。
 - 引入更系统的单元测试框架和持续集成流程。
 

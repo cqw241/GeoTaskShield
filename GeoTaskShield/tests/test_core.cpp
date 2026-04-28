@@ -15,8 +15,12 @@
 #include "simulation/SimulationEngine.h"
 #include "data/CsvExporter.h"
 #include "agent/ExperimentAgent.h"
+#include "agent/HttpClient.h"
+#include "agent/OpenAICompatibleAssistant.h"
 #include "agent/ReportGenerator.h"
 #include "agent/RuleBasedConfigParser.h"
+#include "agent/MockLLMAssistant.h"
+#include "agent/RuleBasedAssistant.h"
 #include "experiment/BatchExperiment.h"
 #include "experiment/BatchExperimentExporter.h"
 #include "experiment/BatchResultCsvLoader.h"
@@ -24,11 +28,14 @@
 #include "experiment/BatchResultRecord.h"
 
 #include <cmath>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -36,7 +43,8 @@ namespace {
 void require(bool condition, const std::string& message)
 {
     if (!condition) {
-        throw std::runtime_error(message);
+        std::cerr << "Test failed: " << message << '\n';
+        std::exit(1);
     }
 }
 
@@ -48,6 +56,51 @@ bool near(double lhs, double rhs, double tolerance = 1e-9)
 bool contains(const std::string& value, const std::string& expected)
 {
     return value.find(expected) != std::string::npos;
+}
+
+class FakeHttpClient : public gts::IHttpClient {
+public:
+    mutable int callCount{};
+    mutable gts::HttpRequest lastRequest;
+    gts::HttpResponse response;
+
+    [[nodiscard]] gts::HttpResponse postJson(
+        const gts::HttpRequest& request) const override
+    {
+        ++callCount;
+        lastRequest = request;
+        return response;
+    }
+};
+
+void setEnvValue(const std::string& name, const std::string& value)
+{
+#ifdef _WIN32
+    _putenv_s(name.c_str(), value.c_str());
+#else
+    setenv(name.c_str(), value.c_str(), 1);
+#endif
+}
+
+void clearEnvValue(const std::string& name)
+{
+#ifdef _WIN32
+    _putenv_s(name.c_str(), "");
+#else
+    unsetenv(name.c_str());
+#endif
+}
+
+bool hasHeader(const std::vector<std::pair<std::string, std::string>>& headers,
+               const std::string& name,
+               const std::string& value)
+{
+    for (const auto& [headerName, headerValue] : headers) {
+        if (headerName == name && headerValue == value) {
+            return true;
+        }
+    }
+    return false;
 }
 
 std::string writeTempCsv(const std::string& name, const std::string& content)
@@ -310,6 +363,162 @@ int main()
             "ExperimentAgent should run three rows for privacy comparison prompts.");
     require(contains(agentResult.markdown, "Hungarian"),
             "ExperimentAgent should include selected algorithm names in the report.");
+
+    RuleBasedAssistant assistant;
+    AssistantRequest assistantRequest;
+    assistantRequest.prompt =
+        "Compare grid and laplace for 100 workers, 50 tasks. Use hungarian and "
+        "score greedy. Focus on completion rate, privacy utility, privacy loss, "
+        "and fairness.";
+    assistantRequest.sourceLabel = "test filtered rows";
+    assistantRequest.batchResults = {
+        BatchResultRecord{"completion-best", 100, 50, 10.0, 3, 1.0, "Grid Privacy",
+                          "Hungarian", 49, 50, 0.98, 12.0, 200.0, 3.0, 0.8, 0.4,
+                          0.72, 0.245, 0.02},
+        BatchResultRecord{"utility-best", 100, 50, 10.0, 3, 0.5,
+                          "Laplace Noise Privacy", "Score Greedy", 45, 50, 0.90,
+                          9.0, 180.0, 0.5, 0.5, 0.2, 0.93, 0.60, 0.01},
+        BatchResultRecord{"privacy-best", 100, 50, 10.0, 3, 1.0,
+                          "K-Anonymity Privacy", "Nearest Greedy", 40, 50, 0.80,
+                          7.0, 150.0, 0.2, 0.4, 0.1, 0.88, 0.30, 0.03}
+    };
+    const AssistantResponse assistantResponse = assistant.analyze(assistantRequest);
+    require(assistantResponse.success,
+            "RuleBasedAssistant should return a successful local analysis.");
+    require(assistantResponse.intent.workerCount.has_value() &&
+                assistantResponse.intent.workerCount.value() == 100,
+            "RuleBasedAssistant should parse worker counts.");
+    require(assistantResponse.intent.taskCount.has_value() &&
+                assistantResponse.intent.taskCount.value() == 50,
+            "RuleBasedAssistant should parse task counts.");
+    require(assistantResponse.intent.compareRequested,
+            "RuleBasedAssistant should detect comparison intent.");
+    require(assistantResponse.intent.privacyTypes.size() == 2,
+            "RuleBasedAssistant should parse requested privacy mechanisms.");
+    require(assistantResponse.intent.algorithmTypes.size() == 2,
+            "RuleBasedAssistant should parse requested assignment algorithms.");
+    require(assistantResponse.intent.metricNames.size() >= 4,
+            "RuleBasedAssistant should parse metric terms.");
+    require(contains(assistantResponse.intentPreviewMarkdown, "workers: 100"),
+            "RuleBasedAssistant should generate a structured intent preview.");
+    require(contains(assistantResponse.analysisMarkdown,
+                     "# GeoTaskShield Agent Assistant Analysis"),
+            "RuleBasedAssistant should emit a Markdown analysis title.");
+    require(contains(assistantResponse.analysisMarkdown, "Best completion rate") &&
+                contains(assistantResponse.analysisMarkdown, "completion-best"),
+            "RuleBasedAssistant should report the best completionRate row.");
+    require(contains(assistantResponse.analysisMarkdown,
+                     "Best privacy-utility ratio") &&
+                contains(assistantResponse.analysisMarkdown, "utility-best"),
+            "RuleBasedAssistant should report the best privacyUtilityRatio row.");
+    require(contains(assistantResponse.analysisMarkdown,
+                     "Lowest average privacy loss") &&
+                contains(assistantResponse.analysisMarkdown, "privacy-best"),
+            "RuleBasedAssistant should report the lowest averagePrivacyLoss row.");
+    require(contains(assistantResponse.analysisMarkdown, "Best fairness index") &&
+                contains(assistantResponse.analysisMarkdown, "utility-best"),
+            "RuleBasedAssistant should report the best fairnessIndex row.");
+    require(contains(assistantResponse.analysisMarkdown,
+                     "Next Experiment Suggestions"),
+            "RuleBasedAssistant should provide next-experiment suggestions.");
+
+    AssistantRequest chineseMetricRequest;
+    chineseMetricRequest.prompt =
+        "比较隐私机制，关注完成率、隐私效用比、隐私损失和公平性";
+    chineseMetricRequest.batchResults = {
+        BatchResultRecord{"same-privacy-a", 10, 5, 10.0, 3, 1.0, "Grid Privacy",
+                          "Nearest Greedy", 4, 5, 0.8, 2.0, 20.0, 1.0, 0.1, 0.2,
+                          0.7, 0.4, 0.0},
+        BatchResultRecord{"same-privacy-b", 10, 5, 10.0, 3, 1.0, "Grid Privacy",
+                          "Hungarian", 5, 5, 1.0, 3.0, 25.0, 2.0, 0.2, 0.3,
+                          0.8, 0.33, 0.0}
+    };
+    const AssistantResponse chineseMetricResponse =
+        assistant.analyze(chineseMetricRequest);
+    require(chineseMetricResponse.intent.metricNames.size() >= 4,
+            "RuleBasedAssistant should parse Chinese metric terms.");
+    require(contains(chineseMetricResponse.analysisMarkdown,
+                     "Clear filters or load a broader CSV"),
+            "RuleBasedAssistant should suggest broader data when privacy comparison has one privacy type.");
+
+    AssistantRequest emptyAssistantRequest;
+    emptyAssistantRequest.prompt = "Analyze completion and privacy loss";
+    const AssistantResponse emptyAssistantResponse =
+        assistant.analyze(emptyAssistantRequest);
+    require(contains(emptyAssistantResponse.analysisMarkdown,
+                     "no batch rows are available"),
+            "RuleBasedAssistant should explain when no batch rows are available.");
+
+    MockLLMAssistant mockAssistant;
+    const AssistantResponse mockResponse = mockAssistant.analyze(assistantRequest);
+    require(mockResponse.success,
+            "MockLLMAssistant should return a deterministic local response.");
+    require(contains(mockResponse.analysisMarkdown, "Mock LLM Assistant"),
+            "MockLLMAssistant output should be clearly labeled as local mock output.");
+
+    LLMProviderConfig missingKeyConfig;
+    missingKeyConfig.apiKeyEnvName = "GEOTASKSHIELD_TEST_MISSING_API_KEY";
+    missingKeyConfig.modelEnvName = "GEOTASKSHIELD_TEST_MISSING_MODEL";
+    missingKeyConfig.baseUrlEnvName = "GEOTASKSHIELD_TEST_MISSING_BASE_URL";
+    clearEnvValue(missingKeyConfig.apiKeyEnvName);
+    clearEnvValue(missingKeyConfig.modelEnvName);
+    clearEnvValue(missingKeyConfig.baseUrlEnvName);
+    auto missingKeyHttp = std::make_shared<FakeHttpClient>();
+    OpenAICompatibleAssistant missingKeyAssistant(missingKeyConfig, missingKeyHttp);
+    const AssistantResponse missingKeyResponse =
+        missingKeyAssistant.analyze(assistantRequest);
+    require(!missingKeyResponse.success,
+            "OpenAICompatibleAssistant should fail closed when the API key is missing.");
+    require(missingKeyHttp->callCount == 0,
+            "OpenAICompatibleAssistant should not call HTTP without an API key.");
+    require(contains(missingKeyResponse.analysisMarkdown,
+                     missingKeyConfig.apiKeyEnvName),
+            "OpenAICompatibleAssistant should explain the missing API key environment variable.");
+
+    LLMProviderConfig llmConfig;
+    llmConfig.apiKeyEnvName = "GEOTASKSHIELD_TEST_API_KEY";
+    llmConfig.modelEnvName = "GEOTASKSHIELD_TEST_MODEL";
+    llmConfig.baseUrlEnvName = "GEOTASKSHIELD_TEST_BASE_URL";
+    llmConfig.defaultBaseUrl = "https://dashscope.example.test/compatible-mode/v1/";
+    llmConfig.defaultModel = "fallback-model";
+    setEnvValue(llmConfig.apiKeyEnvName, "test-key");
+    setEnvValue(llmConfig.modelEnvName, "kimi-k2.5");
+    clearEnvValue(llmConfig.baseUrlEnvName);
+
+    auto fakeHttp = std::make_shared<FakeHttpClient>();
+    fakeHttp->response.success = true;
+    fakeHttp->response.statusCode = 200;
+    fakeHttp->response.body =
+        R"({"choices":[{"message":{"role":"assistant","content":"# LLM Markdown\n\nBest completion rate: remote result."}}]})";
+    OpenAICompatibleAssistant llmAssistant(llmConfig, fakeHttp);
+    AssistantRequest llmRequest = assistantRequest;
+    llmRequest.prompt =
+        "Analyze 12 workers and 6 tasks with laplace. Explain completion rate.";
+    const AssistantResponse llmResponse = llmAssistant.analyze(llmRequest);
+    require(llmResponse.success,
+            "OpenAICompatibleAssistant should return successful Markdown from a valid provider response.");
+    require(contains(llmResponse.analysisMarkdown, "# LLM Markdown"),
+            "OpenAICompatibleAssistant should use assistant content from the provider response.");
+    require(llmResponse.intent.workerCount.has_value() &&
+                llmResponse.intent.workerCount.value() == 12,
+            "OpenAICompatibleAssistant should preserve local parsed intent.");
+    require(fakeHttp->callCount == 1,
+            "OpenAICompatibleAssistant should make one HTTP request when configured.");
+    require(fakeHttp->lastRequest.url ==
+                "https://dashscope.example.test/compatible-mode/v1/chat/completions",
+            "OpenAICompatibleAssistant should call the OpenAI-compatible chat completions endpoint.");
+    require(hasHeader(fakeHttp->lastRequest.headers, "Authorization",
+                      "Bearer test-key"),
+            "OpenAICompatibleAssistant should send the API key as a bearer token.");
+    require(hasHeader(fakeHttp->lastRequest.headers, "Content-Type",
+                      "application/json"),
+            "OpenAICompatibleAssistant should send JSON content.");
+    require(contains(fakeHttp->lastRequest.body, R"("model":"kimi-k2.5")"),
+            "OpenAICompatibleAssistant should read the model name from the environment.");
+    require(contains(fakeHttp->lastRequest.body, llmRequest.prompt),
+            "OpenAICompatibleAssistant should include the user prompt in the request body.");
+    clearEnvValue(llmConfig.apiKeyEnvName);
+    clearEnvValue(llmConfig.modelEnvName);
 
     BatchExperimentRunner batchRunner;
     std::vector<ExperimentScenario> scenarios{

@@ -1,5 +1,181 @@
 # Progress Log
 
+## Session: 2026-04-28
+
+### Demo Readiness: v0.9.0 Release Hardening
+- **Status:** in progress
+- Actions taken:
+  - Confirmed working tree was clean on `develop`.
+  - Ran non-Qt Debug build and core tests successfully before release hardening.
+  - Ran Qt Debug build and GUI smoke test successfully before release hardening.
+  - Created `release/v0.9.0` from `develop`.
+  - Strengthened GUI smoke coverage to load `phase5_batch_results.csv` from the repository root and verify Markdown/CSV export paths.
+  - Ran the updated GUI smoke target successfully.
+  - Updated project version to `0.9.0`.
+  - Updated Windows package script default version to `v0.9.0`.
+  - Updated README, HANDOFF, CHANGELOG, task plan, findings, and progress records for `v0.9.0`.
+  - Added `docs/demo/v0.9.0-gui-demo-guide.md`.
+  - Ran full non-Qt Debug build and core tests successfully after release hardening changes.
+  - Ran full Qt Debug build and GUI smoke tests successfully after release hardening changes.
+  - Ran Qt Release build successfully.
+  - Generated `out\package\GeoTaskShield-v0.9.0-windows-x64.zip`.
+  - Confirmed the package contains required executables, demo CSV/report files, README/HANDOFF/CHANGELOG, and `docs\demo\v0.9.0-gui-demo-guide.md`.
+  - Ran package text-file secret scan; no provided DashScope key was found.
+  - Ran packaged `GeoTaskShield.exe` and `GeoTaskShieldAgentDemo.exe` successfully.
+  - Launched packaged `GeoTaskShieldGui.exe` and stopped it after startup check.
+  - Ran `git diff --check`; only expected LF-to-CRLF working-copy warnings were reported.
+  - Ran repository secret scan using the configured DashScope key; no matches were found.
+  - Prepared release hardening commit on `release/v0.9.0`.
+- Files created/modified so far:
+  - `CMakeLists.txt` (modified)
+  - `scripts/package_windows.ps1` (modified)
+  - `docs/demo/v0.9.0-gui-demo-guide.md` (created)
+  - `GeoTaskShield/gui/tests/test_gui_smoke.cpp` (modified)
+  - `README.md` (modified)
+  - `HANDOFF.md` (modified)
+  - `CHANGELOG.md` (modified)
+  - `task_plan.md` (updated)
+  - `findings.md` (updated)
+  - `progress.md` (updated)
+- Next:
+  - Keep `release/v0.9.0` ready for review/publishing.
+
+## Test Results
+| Test | Input | Expected | Actual | Status |
+|------|-------|----------|--------|--------|
+| Demo readiness non-Qt verification | `cmake --preset x64-debug && cmake --build out\build\x64-debug && ctest --test-dir out\build\x64-debug --output-on-failure` | Build and core tests pass | `1/1 Test #1: GeoTaskShieldCoreTests Passed` | Pass |
+| Demo readiness Qt verification | `cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt && ctest --test-dir out\build\x64-debug-qt --output-on-failure` | Qt build, core tests, and GUI smoke test pass | `2/2 tests passed` | Pass |
+| Demo CSV GUI smoke verification | `cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt --target GeoTaskShieldGuiSmokeTests && ctest --test-dir out\build\x64-debug-qt --output-on-failure -R GeoTaskShieldGuiSmokeTests` | GUI smoke covers real `phase5_batch_results.csv` load/export path | `1/1 Test #2: GeoTaskShieldGuiSmokeTests Passed` | Pass |
+| Demo readiness post-hardening non-Qt verification | `cmake --preset x64-debug && cmake --build out\build\x64-debug && ctest --test-dir out\build\x64-debug --output-on-failure` | Build and core tests pass | `1/1 Test #1: GeoTaskShieldCoreTests Passed` | Pass |
+| Demo readiness post-hardening Qt verification | `cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt && ctest --test-dir out\build\x64-debug-qt --output-on-failure` | Qt build, core tests, and GUI smoke test pass | `2/2 tests passed` | Pass |
+| v0.9.0 Qt Release build | `cmake --preset x64-release-qt && cmake --build out\build\x64-release-qt` | Release Qt build succeeds | Build exit 0 | Pass |
+| v0.9.0 package script | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package_windows.ps1` | Windows package created | Created `out\package\GeoTaskShield-v0.9.0-windows-x64.zip` | Pass |
+| v0.9.0 package contents | Check required files under package stage directory | Required executables/docs/demo CSV/demo guide present | All required package items are present | Pass |
+| v0.9.0 package launch check | Run packaged console/agent demos and launch GUI briefly | Packaged executables run from package directory | Console and agent demos exit 0; GUI launched and was stopped after startup check | Pass |
+| v0.9.0 diff check | `git diff --check` | No whitespace errors | No whitespace errors; only LF-to-CRLF working-copy warnings | Pass |
+| v0.9.0 repository secret scan | Search repository files excluding `.git`, `out`, and `.vs` for configured DashScope key | No API key committed | No matches | Pass |
+
+### Phase 12: Optional Real LLM Provider
+- **Status:** implementation complete, ready for integration
+- Actions taken:
+  - Used `planning-with-files`, `brainstorming`, `test-driven-development`, and `verification-before-completion` workflows for Phase 12.
+  - Restored current plan, findings, progress, and git state from disk.
+  - Confirmed `develop` was clean and created `feature/phase12-real-llm-provider`.
+  - Checked official Aliyun Bailian / Model Studio documentation for OpenAI-compatible Chat Completions configuration.
+  - Recorded that Phase 12 must use environment variables for credentials and keep automated tests network-free.
+  - Added Phase 12 non-Qt red tests for missing-key fail-closed behavior and fake HTTP provider success.
+  - Added Phase 12 GUI smoke red expectations for an assistant provider selector and Aliyun Bailian option.
+  - Ran the non-Qt test target and confirmed the expected red build on missing `agent/HttpClient.h`.
+  - Ran the GUI smoke target and confirmed the expected red build on missing `AgentAssistantWidget` provider-selection test helpers.
+  - Added Qt-free `HttpClient`, `WinHttpClient`, and `OpenAICompatibleAssistant` provider classes.
+  - Wired provider sources into `GeoTaskShieldCore` and linked `winhttp` on Windows.
+  - Added `Agent Assistant` provider selection with local rule-based default and optional `Aliyun Bailian (DashScope)` provider.
+  - Updated README, HANDOFF, and CHANGELOG with Phase 12 provider and environment variable guidance.
+  - Configured user-level `DASHSCOPE_API_KEY`, `DASHSCOPE_MODEL`, and `DASHSCOPE_BASE_URL` environment variables without writing them to repository files.
+  - Ran full non-Qt Debug build and CTest successfully.
+  - Ran full Qt Debug build and CTest successfully.
+  - Ran `git diff --check` successfully; Git only reported expected LF-to-CRLF working-copy warnings.
+  - Ran repository secret scan using the configured DashScope key; no matches were found in repository files.
+  - Checked `GeoTaskShield/agent` for Qt type/include references; no matches were found.
+- Files created/modified so far:
+  - `task_plan.md` (updated)
+  - `findings.md` (updated)
+  - `progress.md` (updated)
+  - `GeoTaskShield/tests/test_core.cpp` (modified)
+  - `GeoTaskShield/gui/tests/test_gui_smoke.cpp` (modified)
+  - `GeoTaskShield/agent/HttpClient.h` (created)
+  - `GeoTaskShield/agent/WinHttpClient.h/.cpp` (created)
+  - `GeoTaskShield/agent/OpenAICompatibleAssistant.h/.cpp` (created)
+  - `GeoTaskShield/CMakeLists.txt` (modified)
+  - `GeoTaskShield/gui/AgentAssistantWidget.h/.cpp` (modified)
+  - `README.md` (modified)
+  - `HANDOFF.md` (modified)
+  - `CHANGELOG.md` (modified)
+- Next:
+  - Commit on the feature branch, merge into `develop`, and push to GitHub.
+
+## Test Results
+| Test | Input | Expected | Actual | Status |
+|------|-------|----------|--------|--------|
+| Phase 12 core red test | `cmake --build out\build\x64-debug --target GeoTaskShieldTests` after adding provider tests | Fails because provider headers do not exist yet | Failed on missing `agent/HttpClient.h` | Expected fail |
+| Phase 12 GUI red test | `cmake --build out\build\x64-debug-qt --target GeoTaskShieldGuiSmokeTests` after adding provider selector expectations | Fails because GUI provider helpers do not exist yet | Failed on missing `hasProviderSelectionForTesting`, `hasProviderOptionForTesting`, and `setProviderForTesting` | Expected fail |
+| Phase 12 core green increment | `cmake --preset x64-debug && cmake --build out\build\x64-debug --target GeoTaskShieldTests && out\build\x64-debug\GeoTaskShield\GeoTaskShieldTests.exe` | Provider fake HTTP tests pass | Build exit 0; test executable exit 0 | Pass |
+| Phase 12 GUI green increment | `cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt --target GeoTaskShieldGuiSmokeTests && ctest --test-dir out\build\x64-debug-qt --output-on-failure -R GeoTaskShieldGuiSmokeTests` | Provider selector smoke test passes | `1/1 Test #2: GeoTaskShieldGuiSmokeTests Passed` | Pass |
+| Phase 12 full non-Qt verification | `cmake --preset x64-debug && cmake --build out\build\x64-debug && ctest --test-dir out\build\x64-debug --output-on-failure` | Build and core tests pass | `1/1 Test #1: GeoTaskShieldCoreTests Passed` | Pass |
+| Phase 12 full Qt verification | `cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt && ctest --test-dir out\build\x64-debug-qt --output-on-failure` | Qt build, core tests, and GUI smoke tests pass | `2/2 tests passed` | Pass |
+| Phase 12 diff check | `git diff --check` | No whitespace errors | No whitespace errors; only LF-to-CRLF working-copy warnings | Pass |
+| Phase 12 secret scan | Search repository files excluding `.git`, `out`, and `.vs` for the configured DashScope key | No API key committed | No matches | Pass |
+| Phase 12 Qt-free agent boundary check | Search `GeoTaskShield/agent` for Qt type/include references | No Qt references | No matches | Pass |
+
+### Phase 11: Intelligent Experiment Assistant
+- **Status:** complete
+- Actions taken:
+  - Used `planning-with-files` at the user's request.
+  - Restored prior planning context from `task_plan.md`, `findings.md`, and `progress.md`.
+  - Confirmed implementation branch is `feature/phase11-intelligent-assistant`.
+  - Confirmed Phase 11 spec exists at `docs/superpowers/specs/2026-04-28-phase11-intelligent-experiment-assistant-design.md`.
+  - Updated planning files with Phase 11 scope, success criteria, decisions, and execution phases.
+  - Added Phase 11 non-Qt assistant tests to `GeoTaskShield/tests/test_core.cpp`.
+  - Ran the non-Qt test target and confirmed the expected red build on missing `agent/MockLLMAssistant.h`.
+  - Added Qt-free assistant types and implementations under `GeoTaskShield/agent`.
+  - Wired `RuleBasedAssistant.cpp` and `MockLLMAssistant.cpp` into `GeoTaskShieldCore`.
+  - Adjusted lightweight test `require` helpers to print failures and exit instead of opening MSVC Debug Runtime dialogs.
+  - Ran non-Qt assistant/core verification successfully.
+  - Added GUI smoke expectations for the `Agent Assistant` tab and confirmed the expected red build on missing `gui/AgentAssistantWidget.h`.
+  - Added `AgentAssistantWidget` with natural-language input, Analyze, parsed intent preview, Markdown preview, and Markdown export.
+  - Exposed current filtered rows from `BatchResultsWidget`.
+  - Integrated the `Agent Assistant` tab into `MainWindow`.
+  - Ran Qt GUI smoke verification successfully.
+  - Updated README and HANDOFF with Phase 11 user-facing workflow and handoff details.
+  - Ran full non-Qt Debug verification successfully.
+  - Ran full Qt Debug verification successfully.
+  - Ran `git diff --check` successfully; Git only reported expected LF-to-CRLF working-copy warnings.
+  - Ran secret/API-key and network dependency scan over changed files; no matches were found.
+  - Checked new `agent` assistant files for Qt type names; no matches were found.
+- Files created/modified so far:
+  - `docs/superpowers/specs/2026-04-28-phase11-intelligent-experiment-assistant-design.md` (created in prior turn)
+  - `task_plan.md` (updated)
+  - `findings.md` (updated)
+  - `progress.md` (updated)
+  - `GeoTaskShield/tests/test_core.cpp` (modified)
+  - `GeoTaskShield/gui/tests/test_gui_smoke.cpp` (modified)
+  - `GeoTaskShield/agent/ExperimentIntent.h` (created)
+  - `GeoTaskShield/agent/AssistantRequest.h` (created)
+  - `GeoTaskShield/agent/AssistantResponse.h` (created)
+  - `GeoTaskShield/agent/IExperimentAssistant.h` (created)
+  - `GeoTaskShield/agent/RuleBasedAssistant.h/.cpp` (created)
+  - `GeoTaskShield/agent/MockLLMAssistant.h/.cpp` (created)
+  - `GeoTaskShield/CMakeLists.txt` (modified)
+  - `GeoTaskShield/gui/AgentAssistantWidget.h/.cpp` (created)
+  - `GeoTaskShield/gui/BatchResultsWidget.h/.cpp` (modified)
+  - `GeoTaskShield/gui/MainWindow.h/.cpp` (modified)
+  - `README.md` (modified)
+  - `HANDOFF.md` (modified)
+- Next:
+  - Review and merge Phase 11 into `develop`.
+
+## Test Results
+| Test | Input | Expected | Actual | Status |
+|------|-------|----------|--------|--------|
+| Phase 11 core red test | `cmake --build out\build\x64-debug --target GeoTaskShieldTests` after adding assistant tests | Fails because assistant headers do not exist yet | Failed on missing `agent/MockLLMAssistant.h` | Expected fail |
+| Phase 11 first core green attempt | `cmake --preset x64-debug && cmake --build out\build\x64-debug --target GeoTaskShieldTests && ctest --test-dir out\build\x64-debug --output-on-failure -R GeoTaskShieldCoreTests` | Build and core tests pass | Command timed out after 124 seconds before result was available | Retry with longer timeout |
+| Phase 11 core verification | `cmake --preset x64-debug && cmake --build out\build\x64-debug --target GeoTaskShieldTests && ctest --test-dir out\build\x64-debug --output-on-failure -R GeoTaskShieldCoreTests` | Build and core tests pass | `1/1 Test #1: GeoTaskShieldCoreTests Passed` | Pass |
+| Phase 11 GUI red test | `cmake --build out\build\x64-debug-qt --target GeoTaskShieldGuiSmokeTests` after adding assistant tab expectations | Fails because assistant widget does not exist yet | Failed on missing `gui/AgentAssistantWidget.h` | Expected fail |
+| Phase 11 GUI smoke verification | `cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt --target GeoTaskShieldGuiSmokeTests && ctest --test-dir out\build\x64-debug-qt --output-on-failure -R GeoTaskShieldGuiSmokeTests` | Assistant tab and existing GUI smoke tests pass | `1/1 Test #2: GeoTaskShieldGuiSmokeTests Passed` | Pass |
+| Phase 11 full non-Qt verification | `cmake --preset x64-debug && cmake --build out\build\x64-debug && ctest --test-dir out\build\x64-debug --output-on-failure` | Build and core tests pass | `1/1 Test #1: GeoTaskShieldCoreTests Passed` | Pass |
+| Phase 11 full Qt verification | `cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt && ctest --test-dir out\build\x64-debug-qt --output-on-failure` | Qt build, core tests, and GUI smoke tests pass | `2/2 tests passed` | Pass |
+| Phase 11 diff check | `git diff --check` | No whitespace errors | No whitespace errors; only LF-to-CRLF working-copy warnings | Pass |
+| Phase 11 secret/network scan | `Select-String` over changed files for API-key assignments and network API patterns | No matches | No matches | Pass |
+| Phase 11 Qt-free assistant boundary check | `Select-String` over `GeoTaskShield/agent/*.h/.cpp` for Qt type names | No Qt type references | No matches | Pass |
+| Phase 11 review regression red test | `cmake --build out\build\x64-debug --target GeoTaskShieldTests && out\build\x64-debug\GeoTaskShield\GeoTaskShieldTests.exe` after adding Chinese metric/single-privacy comparison tests | Fails before implementation | Failed on Chinese metric parsing | Expected fail |
+| Phase 11 review regression green test | `cmake --build out\build\x64-debug --target GeoTaskShieldTests && out\build\x64-debug\GeoTaskShield\GeoTaskShieldTests.exe` | Chinese metric parsing and single-privacy comparison suggestion pass | Exit code 0 | Pass |
+
+## Error Log
+| Timestamp | Error | Attempt | Resolution |
+|-----------|-------|---------|------------|
+| 2026-04-28 | Phase 11 non-Qt verification timed out after 124 seconds | 1 | Re-run with a longer timeout to distinguish slow MSVC rebuild from a real compile/test failure. |
+| 2026-04-28 | Phase 11 non-Qt verification timed out again because `GeoTaskShieldTests.exe` opened a MSVC Debug Runtime dialog | 2 | Terminated the stale test process, corrected the failing assistant test fixture, and aligned the empty-data Markdown text with the assertion. |
+
 ## Session: 2026-04-27
 
 ### Phase 8: v0.7.0 Release and Demo Hardening

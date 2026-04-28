@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.9.0 - 2026-04-28
+
+### Added
+
+- Phase 12 optional OpenAI-compatible LLM provider for `IExperimentAssistant`.
+- Aliyun Bailian / DashScope provider selection in the `Agent Assistant` GUI tab.
+- Environment-variable configuration for `DASHSCOPE_API_KEY`, `DASHSCOPE_MODEL`, and `DASHSCOPE_BASE_URL`.
+- WinHTTP-based Qt-free HTTP transport with fake-transport core tests.
+- Demo guide and checklist: `docs/demo/v0.9.0-gui-demo-guide.md`.
+
+### Changed
+
+- `Agent Assistant` remains local rule-based by default; real provider calls only run when explicitly selected.
+- Updated README and handoff documentation for Demo Readiness.
+- Updated Windows packaging defaults to produce `GeoTaskShield-v0.9.0-windows-x64.zip`.
+
+### Verification
+
+- Non-Qt Debug build and CTest.
+- Qt Debug build and CTest.
+- Qt Release build.
+- Windows packaging script.
+
 ## v0.8.0 - 2026-04-28
 
 ### Added

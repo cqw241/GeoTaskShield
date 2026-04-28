@@ -1,6 +1,6 @@
 param(
     [string]$Preset = "x64-release-qt",
-    [string]$Version = "v0.8.0",
+    [string]$Version = "v0.9.0",
     [string]$VsDevCmd = "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat"
 )
 

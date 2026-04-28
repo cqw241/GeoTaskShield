@@ -1,6 +1,27 @@
 # Findings & Decisions
 
 ## Requirements
+- Enter Demo Readiness after Phase 12.
+- Do not continue asynchronous LLM calls, timeout controls, complex error UX, Qt Graphs, or GoogleTest migration.
+- Verify non-Qt Debug build/core tests and Qt Debug build/GUI smoke tests.
+- Verify demo workflow for Simulation, Batch Results, Agent Assistant local provider, and optional DashScope entry/config docs.
+- Prepare `v0.9.0` release hardening by updating version, README, HANDOFF, CHANGELOG, demo guide, and package script.
+- Generate or confirm a runnable release package.
+- Enter GeoTaskShield Phase 12: extend `IExperimentAssistant` with an optional real LLM provider.
+- Keep the existing offline rule-based assistant as the default.
+- Support an Aliyun Bailian / DashScope provider using environment variables for secrets and model selection.
+- Configure the user's local environment for DashScope API access without writing the provided key into repository files.
+- Do not require network access or a real API key in automated tests.
+- Do not modify `SimulationEngine`, `PrivacyFactory`, `AssignmentAlgorithmFactory`, `BatchExperiment`, or algorithm semantics.
+- Keep Qt types confined to `GeoTaskShield/gui`.
+- Enter GeoTaskShield Phase 11: Intelligent Experiment Assistant.
+- Work from `develop` on `feature/phase11-intelligent-assistant`.
+- Add an offline `Agent Assistant` GUI tab with natural-language input, Analyze, parsed intent preview, Markdown preview, and optional Markdown export.
+- Add Qt-free assistant abstractions: `AssistantRequest`, `AssistantResponse`, `ExperimentIntent`, `IExperimentAssistant`, `RuleBasedAssistant`, and `MockLLMAssistant`.
+- Parse workers, tasks, privacy, algorithm, metrics, and compare intent locally.
+- Analyze current Batch Results CSV/filtered rows and generate Markdown conclusions for best `completionRate`, best `privacyUtilityRatio`, lowest `averagePrivacyLoss`, and best `fairnessIndex`.
+- Provide local next-experiment suggestions.
+- Do not connect to real online LLMs, store API keys, introduce network dependencies, change `SimulationEngine`, `PrivacyFactory`, `AssignmentAlgorithmFactory`, or `BatchExperiment` semantics, add Qt Graphs, migrate GoogleTest, or add algorithms.
 - Enter GeoTaskShield Phase 8: release and demo hardening for `v0.7.0`.
 - Phase 8 must freeze feature scope and avoid Markdown preview, filtered export, Qt Graphs, and online LLM work.
 - Release package must include `phase5_batch_results.csv` or equivalent demo data.
@@ -30,6 +51,21 @@
 - Preserve the Phase 1 console MVP and make Phase 2 verifiable.
 
 ## Research Findings
+- Current branch for Demo Readiness is `release/v0.9.0`.
+- `v0.9.0` release hardening is scoped to packaging, documentation, demo workflow verification, and smoke-test coverage for the real demo CSV.
+- Existing package script already includes `docs/demo`, `phase5_batch_results.csv`, and `phase5_batch_report.md`; updating its default version is sufficient for package naming.
+- Current branch for Phase 12 is `feature/phase12-real-llm-provider`.
+- Official Aliyun Bailian / Model Studio documentation describes an OpenAI-compatible Chat Completions endpoint.
+- Beijing region default base URL is `https://dashscope.aliyuncs.com/compatible-mode/v1`; HTTP requests post to `/chat/completions`.
+- The official examples read the bearer token from `DASHSCOPE_API_KEY`.
+- Phase 12 should support `DASHSCOPE_MODEL` for the model name; the user requested `kimi-k2.5`.
+- Official reference used: https://help.aliyun.com/zh/model-studio/qwen-api-via-openai-chat-completions
+- Current branch for implementation is `feature/phase11-intelligent-assistant`.
+- Phase 11 spec is `docs/superpowers/specs/2026-04-28-phase11-intelligent-experiment-assistant-design.md`.
+- Current release documentation says `v0.8.0` already includes Batch Results Markdown preview/export and filtered CSV export.
+- Existing `agent` module has `ExperimentRequest`, `RuleBasedConfigParser`, `ExperimentReport`, `ReportGenerator`, and `ExperimentAgent`.
+- Existing `experiment` module has `BatchResultRecord`, `BatchResultCsvLoader`, and `BatchResultModel` with filter, summary, chart, Markdown, and CSV report support.
+- Existing `gui` module has `BatchResultsWidget` and `MainWindow` with `Simulation` and `Batch Results` tabs.
 - Current source root is `D:\VS2026_Projects\GeoTaskShield\GeoTaskShield`.
 - Current core modules:
   - `model`: `Location`, `Task`, `Worker`, `Assignment`, `ExperimentConfig`
@@ -52,6 +88,15 @@
 ## Technical Decisions
 | Decision | Rationale |
 |----------|-----------|
+| Phase 11 adds assistant classes under `agent` | Assistant behavior is natural-language parsing and analysis, and must remain Qt-free. |
+| Phase 11 GUI reads filtered records through `BatchResultsWidget` | The existing widget already owns current CSV/filter state; exposing records avoids scraping table text. |
+| Phase 11 will use TDD against the existing lightweight test executables | The project has not migrated to GoogleTest and the user explicitly asked not to migrate it. |
+| Phase 11 default assistant is `RuleBasedAssistant` | The phase is offline-first and must not call real online LLMs. |
+| Phase 12 should add a real provider behind `IExperimentAssistant` instead of changing core assistant callers | The existing GUI and tests can preserve local behavior while exposing optional online analysis. |
+| Phase 12 should use an injectable HTTP client | Automated tests must remain hermetic and must not depend on network access or real credentials. |
+| DashScope provider configuration should use `DASHSCOPE_API_KEY`, `DASHSCOPE_MODEL`, and optional `DASHSCOPE_BASE_URL` | These names match official examples for the key and keep model/base URL runtime-configurable. |
+| Demo Readiness should use `release/v0.9.0` | This work prepares a versioned release package rather than adding new feature behavior. |
+| Optional DashScope provider is not a main demo dependency | The user explicitly asked to confirm only the entry and environment variable explanation. |
 | Stage 2 will keep `SimulationEngine` strategy-based | Existing design already accepts privacy and assignment strategy objects. |
 | Implement factories after concrete algorithms | Factory tests are clearer once there are multiple concrete strategies. |
 | CSV export is a separate `data` module | Export should not pollute algorithm, simulation, or GUI layers. |

@@ -1,10 +1,13 @@
+#include "gui/AgentAssistantWidget.h"
 #include "gui/BatchResultsWidget.h"
 #include "gui/MainWindow.h"
 
 #include <QApplication>
 
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 
@@ -13,7 +16,8 @@ namespace {
 void require(bool condition, const std::string& message)
 {
     if (!condition) {
-        throw std::runtime_error(message);
+        std::cerr << "Test failed: " << message << '\n';
+        std::exit(1);
     }
 }
 
@@ -24,6 +28,11 @@ std::string writeTempCsv(const std::string& name, const std::string& content)
     std::ofstream file(path, std::ios::binary);
     file << content;
     return path.string();
+}
+
+std::filesystem::path repositoryRoot()
+{
+    return std::filesystem::path(__FILE__).parent_path().parent_path().parent_path().parent_path();
 }
 
 } // namespace
@@ -102,6 +111,69 @@ int main(int argc, char** argv)
     require(exportedCsv.find("scenario,workers,tasks,grid_size,k,epsilon") !=
                 std::string::npos,
             "Exported filtered CSV should contain the batch CSV header.");
+
+    const std::filesystem::path demoCsvPath =
+        repositoryRoot() / "phase5_batch_results.csv";
+    require(std::filesystem::exists(demoCsvPath),
+            "Demo CSV phase5_batch_results.csv should exist at the repository root.");
+    require(batchWidget->loadCsvFile(QString::fromStdString(demoCsvPath.string())),
+            "BatchResultsWidget should load the demo phase5_batch_results.csv file.");
+    require(batchWidget->visibleRowCountForTesting() > 0,
+            "BatchResultsWidget should show rows from phase5_batch_results.csv.");
+    batchWidget->sortByColumnForTesting("privacyUtilityRatio", Qt::DescendingOrder);
+    require(!batchWidget->firstScenarioForTesting().isEmpty(),
+            "BatchResultsWidget should keep a visible scenario after sorting demo data.");
+    const QString demoMarkdown = batchWidget->markdownReportForTesting();
+    require(demoMarkdown.contains("# GeoTaskShield Batch Results Report") &&
+                demoMarkdown.contains("Best privacy-utility ratio"),
+            "BatchResultsWidget should preview Markdown from phase5_batch_results.csv.");
+    const std::string demoMarkdownPath =
+        (std::filesystem::temp_directory_path() / "gts_v090_demo_report.md").string();
+    require(batchWidget->exportMarkdownForTesting(QString::fromStdString(demoMarkdownPath)),
+            "BatchResultsWidget should export Markdown for phase5_batch_results.csv.");
+    const std::string demoCsvExportPath =
+        (std::filesystem::temp_directory_path() / "gts_v090_demo_filtered.csv").string();
+    require(batchWidget->exportFilteredCsvForTesting(QString::fromStdString(demoCsvExportPath)),
+            "BatchResultsWidget should export filtered CSV for phase5_batch_results.csv.");
+
+    auto* assistantWidget = window.findChild<gts::AgentAssistantWidget*>();
+    require(assistantWidget != nullptr,
+            "MainWindow should expose an Agent Assistant tab.");
+    require(assistantWidget->hasAssistantControlsForTesting(),
+            "AgentAssistantWidget should expose input, analyze, preview, and export controls.");
+    require(assistantWidget->hasProviderSelectionForTesting(),
+            "AgentAssistantWidget should expose an assistant provider selector.");
+    require(assistantWidget->hasProviderOptionForTesting("Aliyun Bailian"),
+            "AgentAssistantWidget should include an Aliyun Bailian provider option.");
+    assistantWidget->setProviderForTesting("Local rule-based");
+    assistantWidget->setPromptForTesting(
+        "Compare privacy mechanisms for 1 workers and 1 tasks. Focus on "
+        "completion rate, privacy utility, privacy loss, and fairness.");
+    assistantWidget->analyzeForTesting();
+    const QString intentPreview = assistantWidget->intentPreviewForTesting();
+    require(intentPreview.contains("workers: 1"),
+            "AgentAssistantWidget should preview parsed worker intent.");
+    const QString assistantMarkdown = assistantWidget->analysisMarkdownForTesting();
+    require(assistantMarkdown.contains("# GeoTaskShield Agent Assistant Analysis"),
+            "AgentAssistantWidget should preview assistant Markdown analysis.");
+    require(assistantMarkdown.contains("Best completion rate") &&
+                assistantMarkdown.contains("Best privacy-utility ratio") &&
+                assistantMarkdown.contains("Lowest average privacy loss") &&
+                assistantMarkdown.contains("Best fairness index"),
+            "AgentAssistantWidget analysis should include all required metric conclusions.");
+
+    const std::string assistantMarkdownPath =
+        (std::filesystem::temp_directory_path() / "gts_phase11_assistant.md").string();
+    require(assistantWidget->exportMarkdownForTesting(
+                QString::fromStdString(assistantMarkdownPath)),
+            "AgentAssistantWidget should export the generated Markdown analysis.");
+    std::ifstream assistantMarkdownFile(assistantMarkdownPath, std::ios::binary);
+    const std::string exportedAssistantMarkdown(
+        (std::istreambuf_iterator<char>(assistantMarkdownFile)),
+        std::istreambuf_iterator<char>());
+    require(exportedAssistantMarkdown.find(
+                "# GeoTaskShield Agent Assistant Analysis") != std::string::npos,
+            "Exported assistant Markdown should contain the generated analysis.");
 
     return 0;
 }
