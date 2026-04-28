@@ -20,6 +20,8 @@ set(GEOTASKSHIELD_CORE_SOURCES
     "agent/ExperimentAgent.cpp"
     "experiment/BatchExperiment.cpp"
     "experiment/BatchExperimentExporter.cpp"
+    "experiment/BatchResultCsvLoader.cpp"
+    "experiment/BatchResultModel.cpp"
 )
 
 if (MSVC)
