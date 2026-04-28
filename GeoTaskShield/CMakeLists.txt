@@ -20,6 +20,8 @@ set(GEOTASKSHIELD_CORE_SOURCES
     "agent/ExperimentAgent.cpp"
     "experiment/BatchExperiment.cpp"
     "experiment/BatchExperimentExporter.cpp"
+    "experiment/BatchResultCsvLoader.cpp"
+    "experiment/BatchResultModel.cpp"
 )
 
 if (MSVC)
@@ -81,8 +83,10 @@ if (GEOTASKSHIELD_BUILD_GUI)
         HINTS "${GEOTASKSHIELD_QT_PREFIX}/bin")
 
     set(GEOTASKSHIELD_GUI_SOURCES
+        "gui/BatchResultsWidget.cpp"
         "gui/MainWindow.cpp"
         "gui/MapCanvas.cpp"
+        "gui/MetricBarChart.cpp"
         "gui/ParameterPanel.cpp"
         "gui/ResultPanel.cpp"
         "gui/LogPanel.cpp"

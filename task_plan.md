@@ -1,10 +1,20 @@
-# Task Plan: GeoTaskShield Phase 6 - Engineering Release
+# Task Plan: GeoTaskShield Phase 7 - GUI Batch Results Visualization
 
 ## Goal
-Prepare GeoTaskShield for a cleaner C++/Qt delivery by integrating Phase 5, removing obsolete template files, adding style and packaging conventions, and publishing a verified release tag.
+Add a Qt GUI Batch Results tab for loading and analyzing existing Phase 5 batch CSV outputs while preserving core algorithm, Agent, and BatchExperiment semantics.
 
 ## Current Phase
-Phase 6 complete
+Phase 7 complete
+
+## Phase 7 Success Criteria
+- Work happens on `feature/phase7-gui-batch-results`.
+- Add Qt-free batch result loading/model classes under `GeoTaskShield/experiment`.
+- Keep Qt types isolated to `GeoTaskShield/gui` widgets.
+- Load current `phase5_batch_results.csv` and same-structure CSV files.
+- Support privacy/algorithm filtering, metric selection, summary cards, single-metric bar chart, detail table, and numeric sorting.
+- Summary cards include both metric values and `scenario + privacy + algorithm` source context.
+- Do not change `SimulationEngine`, factories, Agent, or `BatchExperiment` semantics.
+- Non-Qt and Qt CTest targets pass.
 
 ## Phase 6 Success Criteria
 - Phase 5 is merged into `develop`.
@@ -213,6 +223,37 @@ Phase 6 complete
 - [x] Merge to `main`, tag `v0.6.0`, merge back to `develop`, and push
 - **Status:** complete
 
+### Phase 25: Phase 7 Design and Plan
+- [x] Create `feature/phase7-gui-batch-results`
+- [x] Write Phase 7 design document
+- [x] Incorporate review feedback about file boundaries, CSV aliases, numeric sorting, and chart labels
+- [x] Write Phase 7 implementation plan
+- **Status:** complete
+
+### Phase 26: Batch Result Data Layer
+- [x] Add failing tests for CSV loading and result modeling
+- [x] Add `BatchResultRecord`
+- [x] Add `BatchResultCsvLoader`
+- [x] Add `BatchResultModel`
+- [x] Wire data layer into `GeoTaskShieldCore`
+- [x] Run non-Qt core tests
+- **Status:** complete
+
+### Phase 27: Batch Results GUI
+- [x] Add failing GUI smoke test expectations
+- [x] Add `MetricBarChart`
+- [x] Add `BatchResultsWidget`
+- [x] Integrate `Batch Results` tab into `MainWindow`
+- [x] Verify existing Simulation tab still runs
+- [x] Run Qt GUI smoke test
+- **Status:** complete
+
+### Phase 28: Phase 7 Verification and Documentation
+- [x] Run full non-Qt Debug verification
+- [x] Run full Qt Debug verification
+- [x] Update README, HANDOFF, planning files, and progress log
+- **Status:** complete
+
 ## Key Questions
 1. Should Hungarian matching support tasks requiring multiple workers in Phase 2?
    - Decision: no. Phase 2 implements one-worker-per-task matching and leaves multi-worker assignment for a later extension.
@@ -230,6 +271,8 @@ Phase 6 complete
 | Use deterministic random seeds in tests | Privacy noise and data generation must be reproducible for reliable verification. |
 | Phase 6 uses a `release/*` branch | The work is delivery hardening and Git Flow explicitly reserves release branches for release preparation. |
 | Tag Phase 6 as `v0.6.0` | The project has no prior tags; using the phase number keeps the first release tag unambiguous. |
+| Phase 7 stores CSV analysis in `experiment` rather than `gui` | The data/model layer is Qt-free and belongs in the non-Qt core build; only widgets live in `gui`. |
+| Phase 7 uses custom chart painting, not Qt Charts | Qt Charts is deprecated in Qt 6.11 and this phase only needs a single-metric bar chart. |
 
 ## Errors Encountered
 | Error | Attempt | Resolution |

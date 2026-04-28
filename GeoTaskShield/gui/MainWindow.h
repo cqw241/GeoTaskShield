@@ -8,6 +8,7 @@
 
 namespace gts {
 
+class BatchResultsWidget;
 class LogPanel;
 class MapCanvas;
 class ParameterPanel;
@@ -25,6 +26,7 @@ private:
     MapCanvas* mapCanvas_{};
     ResultPanel* resultPanel_{};
     LogPanel* logPanel_{};
+    BatchResultsWidget* batchResultsWidget_{};
     std::optional<SimulationRunResult> lastResult_;
 };
 

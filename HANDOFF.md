@@ -2,8 +2,8 @@
 
 更新时间：2026-04-27
 项目路径：`D:\VS2026_Projects\GeoTaskShield`
-当前状态：阶段 1、阶段 2、阶段 3、阶段 4、阶段 5、阶段 6 已完成并通过验收。当前发布版本：`v0.6.0`。
-当前开发分支：`develop`
+当前状态：阶段 1、阶段 2、阶段 3、阶段 4、阶段 5、阶段 6 已完成并通过验收。阶段 7 已在功能分支实现并通过本地验收。当前发布版本：`v0.6.0`。
+当前开发分支：`feature/phase7-gui-batch-results`
 
 ---
 
@@ -550,13 +550,62 @@ phase5_batch_report.md
 
 ## 11. 建议下一步
 
-建议下一轮进入阶段 7：GUI 数据可视化增强。
+### 阶段 7：GUI 数据可视化增强
 
-可选方向：
+目标：在不改变核心算法、Agent 或 BatchExperiment 语义的前提下，为 Qt GUI 增加批量实验 CSV 结果分析与展示页。
 
-1. 引入 Qt Charts 或自绘图表，展示完成率、隐私损失、公平性和隐私效用比；
-2. 在 GUI 中加载 `phase5_batch_results.csv` 并展示批量实验对比；
-3. 将 batch demo 的 Markdown 报告能力接入 GUI；
-4. 继续拆分核心测试，或评估引入 GoogleTest/Catch2。
+已完成内容：
 
-阶段 7 建议仍保持核心算法不变，优先增强展示和报告能力。
+- 新增 Qt-free 批量结果展示层：
+
+```text
+GeoTaskShield/experiment/
+  BatchResultRecord.h
+  BatchResultCsvLoader.h/.cpp
+  BatchResultModel.h/.cpp
+```
+
+- 新增 Qt Widgets 批量结果页面：
+
+```text
+GeoTaskShield/gui/
+  BatchResultsWidget.h/.cpp
+  MetricBarChart.h/.cpp
+```
+
+- `MainWindow` 改为标签页结构：
+  - `Simulation`：保留原有单次仿真页面；
+  - `Batch Results`：加载和分析批量实验 CSV。
+- `BatchResultCsvLoader` 支持：
+  - 当前 `phase5_batch_results.csv` snake_case 表头；
+  - 常见字段 alias，如 `average_true_distance`、`runtimeMs`、`privacyUtilityRatio`；
+  - UTF-8 BOM；
+  - CRLF/LF；
+  - quoted fields；
+  - 缺列和非法数字的明确错误信息。
+- `BatchResultModel` 支持：
+  - 按 privacy/algorithm 筛选；
+  - 按字段类型排序；
+  - 计算最佳 `completionRate`、最佳 `privacyUtilityRatio`、最佳 `fairnessIndex`、最低 `averagePrivacyLoss`；
+  - 生成 `scenario | privacy | algorithm` 标签的柱状图数据。
+- `BatchResultsWidget` 支持：
+  - 打开 `phase5_batch_results.csv` 或同结构 CSV；
+  - 左侧加载和筛选控件；
+  - 摘要卡片显示指标值和来源实验配置；
+  - 自绘单指标柱状图；
+  - 当前行详情；
+  - 可排序结果表格，数值列按数值排序。
+
+阶段 7 验收结果：
+
+- 非 Qt Debug 构建和核心测试通过；
+- Qt Debug 构建和 GUI smoke test 通过；
+- 未引入 Qt Charts；
+- 未修改 `SimulationEngine`、`PrivacyFactory`、`AssignmentAlgorithmFactory`、Agent 或 `BatchExperiment` 语义。
+
+### 建议后续方向
+
+1. 在 GUI 中增加 Markdown 报告预览或导出入口；
+2. 为 Batch Results 增加导出当前筛选结果能力；
+3. 继续拆分核心测试，或评估引入 GoogleTest/Catch2；
+4. 如后续需要复杂交互图表，再评估 Qt Graphs。
