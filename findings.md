@@ -1,6 +1,13 @@
 # Findings & Decisions
 
 ## Requirements
+- Enter GeoTaskShield Phase 12: extend `IExperimentAssistant` with an optional real LLM provider.
+- Keep the existing offline rule-based assistant as the default.
+- Support an Aliyun Bailian / DashScope provider using environment variables for secrets and model selection.
+- Configure the user's local environment for DashScope API access without writing the provided key into repository files.
+- Do not require network access or a real API key in automated tests.
+- Do not modify `SimulationEngine`, `PrivacyFactory`, `AssignmentAlgorithmFactory`, `BatchExperiment`, or algorithm semantics.
+- Keep Qt types confined to `GeoTaskShield/gui`.
 - Enter GeoTaskShield Phase 11: Intelligent Experiment Assistant.
 - Work from `develop` on `feature/phase11-intelligent-assistant`.
 - Add an offline `Agent Assistant` GUI tab with natural-language input, Analyze, parsed intent preview, Markdown preview, and optional Markdown export.
@@ -38,6 +45,12 @@
 - Preserve the Phase 1 console MVP and make Phase 2 verifiable.
 
 ## Research Findings
+- Current branch for Phase 12 is `feature/phase12-real-llm-provider`.
+- Official Aliyun Bailian / Model Studio documentation describes an OpenAI-compatible Chat Completions endpoint.
+- Beijing region default base URL is `https://dashscope.aliyuncs.com/compatible-mode/v1`; HTTP requests post to `/chat/completions`.
+- The official examples read the bearer token from `DASHSCOPE_API_KEY`.
+- Phase 12 should support `DASHSCOPE_MODEL` for the model name; the user requested `kimi-k2.5`.
+- Official reference used: https://help.aliyun.com/zh/model-studio/qwen-api-via-openai-chat-completions
 - Current branch for implementation is `feature/phase11-intelligent-assistant`.
 - Phase 11 spec is `docs/superpowers/specs/2026-04-28-phase11-intelligent-experiment-assistant-design.md`.
 - Current release documentation says `v0.8.0` already includes Batch Results Markdown preview/export and filtered CSV export.
@@ -70,6 +83,9 @@
 | Phase 11 GUI reads filtered records through `BatchResultsWidget` | The existing widget already owns current CSV/filter state; exposing records avoids scraping table text. |
 | Phase 11 will use TDD against the existing lightweight test executables | The project has not migrated to GoogleTest and the user explicitly asked not to migrate it. |
 | Phase 11 default assistant is `RuleBasedAssistant` | The phase is offline-first and must not call real online LLMs. |
+| Phase 12 should add a real provider behind `IExperimentAssistant` instead of changing core assistant callers | The existing GUI and tests can preserve local behavior while exposing optional online analysis. |
+| Phase 12 should use an injectable HTTP client | Automated tests must remain hermetic and must not depend on network access or real credentials. |
+| DashScope provider configuration should use `DASHSCOPE_API_KEY`, `DASHSCOPE_MODEL`, and optional `DASHSCOPE_BASE_URL` | These names match official examples for the key and keep model/base URL runtime-configurable. |
 | Stage 2 will keep `SimulationEngine` strategy-based | Existing design already accepts privacy and assignment strategy objects. |
 | Implement factories after concrete algorithms | Factory tests are clearer once there are multiple concrete strategies. |
 | CSV export is a separate `data` module | Export should not pollute algorithm, simulation, or GUI layers. |

@@ -2,8 +2,8 @@
 
 更新时间：2026-04-28
 项目路径：`D:\VS2026_Projects\GeoTaskShield`
-当前状态：阶段 1 至阶段 10 已完成并通过本地验收。阶段 11 在 `feature/phase11-intelligent-assistant` 上实现离线智能实验助手能力，当前发布版本仍为 `v0.8.0`。
-当前开发分支：`feature/phase11-intelligent-assistant`
+当前状态：阶段 1 至阶段 11 已完成并通过本地验收。阶段 12 已在 `feature/phase12-real-llm-provider` 上实现可选真实 LLM provider，当前发布版本仍为 `v0.8.0`。
+当前开发分支：`feature/phase12-real-llm-provider`
 
 ---
 
@@ -45,6 +45,7 @@ GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配
 | `feature/phase5-experiment-enhancements` | 阶段 5 功能分支，已合入 `develop` |
 | `feature/phase9-markdown-report-gui` | 阶段 9 功能分支，已合入 `develop` |
 | `feature/phase11-intelligent-assistant` | 阶段 11 智能实验助手功能分支 |
+| `feature/phase12-real-llm-provider` | 阶段 12 可选真实 LLM provider 功能分支 |
 | `release/phase6-engineering-release` | 阶段 6 发布准备分支 |
 | `release/v0.7.0` | 阶段 8 / `v0.7.0` 发布准备分支 |
 | `release/v0.8.0` | 阶段 10 / `v0.8.0` 发布准备分支 |
@@ -659,6 +660,35 @@ GeoTaskShield/gui/
 
 ---
 
+## 14.5. Phase 12: Optional Real LLM Provider
+
+目标：在不改变核心仿真语义、不保存 API key、默认仍可离线运行的前提下，将 `IExperimentAssistant` 扩展为可选真实 LLM provider。
+
+当前实现范围：
+
+- 新增 Qt-free provider 抽象和实现：
+  - `agent/HttpClient.h`
+  - `agent/WinHttpClient.h/.cpp`
+  - `agent/OpenAICompatibleAssistant.h/.cpp`
+- `OpenAICompatibleAssistant` 先用 `RuleBasedAssistant` 生成本地 intent preview，再将用户 prompt、当前 Batch Results 行和本地 intent 发送给 OpenAI-compatible Chat Completions provider。
+- GUI `Agent Assistant` tab 新增 provider selector：
+  - `Local rule-based` 默认选项，不需要网络或 API key；
+  - `Aliyun Bailian (DashScope)` 可选项，只有用户显式选择后才会调用真实 provider。
+- DashScope 配置使用运行时环境变量：
+  - `DASHSCOPE_API_KEY`：必需，真实 provider 缺失时 fail closed，不发起网络请求；
+  - `DASHSCOPE_MODEL`：可选，默认 `kimi-k2.5`；
+  - `DASHSCOPE_BASE_URL`：可选，默认 `https://dashscope.aliyuncs.com/compatible-mode/v1`。
+- 自动化测试通过 fake HTTP transport 验证请求体、鉴权 header 和响应解析，不依赖网络或真实 API key。
+
+约束：
+
+- 不要把 API key 写入源码、文档、测试、报告或提交历史。
+- 不修改 `SimulationEngine`、`PrivacyFactory`、`AssignmentAlgorithmFactory`、`BatchExperiment` 或算法语义。
+- Qt 类型仍只允许出现在 `gui` 模块。
+- 当前真实 provider 调用为同步请求，后续如需更好 GUI 体验可再引入异步调用和超时 UI。
+
+---
+
 ## 15. 构建与验收方式
 
 推荐在 Visual Studio Developer Command Prompt 或通过 `VsDevCmd.bat` 加载 MSVC 环境后执行。
@@ -792,8 +822,8 @@ out\package\GeoTaskShield-v0.8.0-windows-x64.zip
 
 ## 17. 建议下一步
 
-Phase 11 之后可继续考虑：
+Phase 12 之后可继续考虑：
 
-1. 如需真实在线 LLM 接入，新增独立 spec，并通过运行时环境变量读取密钥，默认关闭；
+1. 完善真实 LLM provider 的异步调用、超时控制和用户可见错误提示；
 2. 如后续需要复杂交互图表，再评估 Qt Graphs；
 3. 继续拆分核心测试，或评估引入 GoogleTest/Catch2。
