@@ -112,6 +112,11 @@ int main(int argc, char** argv)
             "MainWindow should expose an Agent Assistant tab.");
     require(assistantWidget->hasAssistantControlsForTesting(),
             "AgentAssistantWidget should expose input, analyze, preview, and export controls.");
+    require(assistantWidget->hasProviderSelectionForTesting(),
+            "AgentAssistantWidget should expose an assistant provider selector.");
+    require(assistantWidget->hasProviderOptionForTesting("Aliyun Bailian"),
+            "AgentAssistantWidget should include an Aliyun Bailian provider option.");
+    assistantWidget->setProviderForTesting("Local rule-based");
     assistantWidget->setPromptForTesting(
         "Compare privacy mechanisms for 1 workers and 1 tasks. Focus on "
         "completion rate, privacy utility, privacy loss, and fairness.");

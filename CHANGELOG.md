@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Phase 12 optional OpenAI-compatible LLM provider for `IExperimentAssistant`.
+- Aliyun Bailian / DashScope provider selection in the `Agent Assistant` GUI tab.
+- Environment-variable configuration for `DASHSCOPE_API_KEY`, `DASHSCOPE_MODEL`, and `DASHSCOPE_BASE_URL`.
+- WinHTTP-based Qt-free HTTP transport with fake-transport core tests.
+
+### Changed
+
+- `Agent Assistant` remains local rule-based by default; real provider calls only run when explicitly selected.
+
 ## v0.8.0 - 2026-04-28
 
 ### Added

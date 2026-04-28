@@ -1,10 +1,13 @@
 #include "gui/AgentAssistantWidget.h"
 
 #include "agent/AssistantRequest.h"
+#include "agent/OpenAICompatibleAssistant.h"
 
+#include <QComboBox>
 #include <QFile>
 #include <QFileDialog>
 #include <QGridLayout>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
@@ -21,6 +24,16 @@ AgentAssistantWidget::AgentAssistantWidget(QWidget* parent)
     auto* root = new QVBoxLayout(this);
 
     auto* inputLabel = new QLabel("Natural language request", this);
+    auto* providerLayout = new QHBoxLayout;
+    auto* providerLabel = new QLabel("Assistant provider", this);
+    providerCombo_ = new QComboBox(this);
+    providerCombo_->setObjectName("assistantProviderCombo");
+    providerCombo_->addItem("Local rule-based", "local");
+    providerCombo_->addItem("Aliyun Bailian (DashScope)", "dashscope");
+    providerLayout->addWidget(providerLabel);
+    providerLayout->addWidget(providerCombo_);
+    providerLayout->addStretch(1);
+
     promptEdit_ = new QTextEdit(this);
     promptEdit_->setMinimumHeight(90);
     promptEdit_->setPlaceholderText(
@@ -50,6 +63,7 @@ AgentAssistantWidget::AgentAssistantWidget(QWidget* parent)
     exportMarkdownButton_ = new QPushButton("Export Markdown", this);
     exportMarkdownButton_->setObjectName("assistantExportMarkdownButton");
 
+    root->addLayout(providerLayout);
     root->addWidget(inputLabel);
     root->addWidget(promptEdit_);
     root->addWidget(analyzeButton_, 0, Qt::AlignLeft);
@@ -75,6 +89,40 @@ bool AgentAssistantWidget::hasAssistantControlsForTesting() const
     return promptEdit_ != nullptr && analyzeButton_ != nullptr &&
            intentPreview_ != nullptr && analysisPreview_ != nullptr &&
            exportMarkdownButton_ != nullptr;
+}
+
+bool AgentAssistantWidget::hasProviderSelectionForTesting() const
+{
+    return providerCombo_ != nullptr && providerCombo_->count() >= 2;
+}
+
+bool AgentAssistantWidget::hasProviderOptionForTesting(
+    const QString& labelPart) const
+{
+    if (providerCombo_ == nullptr) {
+        return false;
+    }
+    for (int index = 0; index < providerCombo_->count(); ++index) {
+        if (providerCombo_->itemText(index).contains(labelPart,
+                                                     Qt::CaseInsensitive)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void AgentAssistantWidget::setProviderForTesting(const QString& labelPart)
+{
+    if (providerCombo_ == nullptr) {
+        return;
+    }
+    for (int index = 0; index < providerCombo_->count(); ++index) {
+        if (providerCombo_->itemText(index).contains(labelPart,
+                                                     Qt::CaseInsensitive)) {
+            providerCombo_->setCurrentIndex(index);
+            return;
+        }
+    }
 }
 
 void AgentAssistantWidget::setPromptForTesting(const QString& prompt)
@@ -111,7 +159,13 @@ void AgentAssistantWidget::analyzePrompt()
         request.batchResults = batchResultsProvider_();
     }
 
-    lastResponse_ = assistant_.analyze(request);
+    if (providerCombo_ != nullptr &&
+        providerCombo_->currentData().toString() == "dashscope") {
+        OpenAICompatibleAssistant llmAssistant;
+        lastResponse_ = llmAssistant.analyze(request);
+    } else {
+        lastResponse_ = assistant_.analyze(request);
+    }
     intentPreview_->setMarkdown(
         QString::fromStdString(lastResponse_.intentPreviewMarkdown));
     analysisPreview_->setMarkdown(

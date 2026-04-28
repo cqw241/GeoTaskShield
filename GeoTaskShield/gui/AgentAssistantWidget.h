@@ -11,6 +11,7 @@
 #include <vector>
 
 class QPushButton;
+class QComboBox;
 class QTextEdit;
 
 namespace gts {
@@ -25,6 +26,9 @@ public:
         std::function<std::vector<BatchResultRecord>()> provider);
 
     bool hasAssistantControlsForTesting() const;
+    bool hasProviderSelectionForTesting() const;
+    bool hasProviderOptionForTesting(const QString& labelPart) const;
+    void setProviderForTesting(const QString& labelPart);
     void setPromptForTesting(const QString& prompt);
     void analyzeForTesting();
     QString intentPreviewForTesting() const;
@@ -40,6 +44,7 @@ private:
     RuleBasedAssistant assistant_;
     AssistantResponse lastResponse_;
 
+    QComboBox* providerCombo_{};
     QTextEdit* promptEdit_{};
     QPushButton* analyzeButton_{};
     QTextEdit* intentPreview_{};

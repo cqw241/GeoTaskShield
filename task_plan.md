@@ -1,10 +1,22 @@
-# Task Plan: GeoTaskShield Phase 11 - Intelligent Experiment Assistant
+# Task Plan: GeoTaskShield Phase 12 - Real LLM Provider
 
 ## Goal
-Implement Phase 11 as an offline intelligent experiment assistant with a Qt-free assistant abstraction, local rule-based analysis over current Batch Results rows, and a Qt Widgets `Agent Assistant` tab.
+Extend the Phase 11 intelligent experiment assistant with an optional real LLM provider while keeping the default assistant offline, Qt-free outside `gui`, and free of committed API keys.
 
 ## Current Phase
-Phase 11 complete on `feature/phase11-intelligent-assistant`; ready for review/merge
+Phase 12 implementation complete on `feature/phase12-real-llm-provider`; ready for integration into `develop`
+
+## Phase 12 Success Criteria
+- Work happens on `feature/phase12-real-llm-provider`.
+- Keep `RuleBasedAssistant` as the default offline provider.
+- Add an optional real LLM provider behind the existing `IExperimentAssistant` boundary.
+- Use environment variables for API key and model configuration; do not write API keys into source, docs, tests, generated reports, or git history.
+- Support Aliyun Bailian / DashScope OpenAI-compatible Chat Completions through `DASHSCOPE_API_KEY`, `DASHSCOPE_MODEL`, and an optional base URL override.
+- Keep Qt types confined to `GeoTaskShield/gui`.
+- Do not change `SimulationEngine`, `PrivacyFactory`, `AssignmentAlgorithmFactory`, `BatchExperiment`, or algorithm semantics.
+- Automated tests must not require network access or a real API key.
+- Non-Qt core tests and Qt GUI smoke tests pass.
+- Secret scan confirms the provided API key is not present in repository files.
 
 ## Phase 11 Success Criteria
 - Work happens on `feature/phase11-intelligent-assistant`.
@@ -321,6 +333,35 @@ Phase 11 complete on `feature/phase11-intelligent-assistant`; ready for review/m
 - [x] Update planning files with final status
 - **Status:** complete
 
+### Phase 35: Phase 12 Context and Red Tests
+- [x] Create `feature/phase12-real-llm-provider` from `develop`
+- [x] Record Phase 12 requirements and official provider details
+- [x] Add failing non-Qt tests for optional LLM provider behavior
+- [x] Add failing GUI smoke expectations for provider selection
+- **Status:** complete
+
+### Phase 36: Qt-Free Real Provider
+- [x] Add provider configuration and HTTP client abstractions
+- [x] Implement OpenAI-compatible / DashScope assistant provider
+- [x] Keep tests hermetic through fake HTTP transport
+- [x] Wire new sources into `GeoTaskShieldCore`
+- **Status:** complete
+
+### Phase 37: GUI Integration and Docs
+- [x] Add provider selection to `AgentAssistantWidget`
+- [x] Preserve local rule-based default behavior
+- [x] Document environment variable setup and no-key fallback behavior
+- [x] Update HANDOFF with Phase 12 status
+- **Status:** complete
+
+### Phase 38: Phase 12 Verification
+- [x] Run non-Qt Debug build and CTest
+- [x] Run Qt Debug build and CTest
+- [x] Run diff check
+- [x] Run secret/API-key scan
+- [x] Configure the user's local DashScope environment variables
+- **Status:** complete
+
 ## Key Questions
 1. Should Hungarian matching support tasks requiring multiple workers in Phase 2?
    - Decision: no. Phase 2 implements one-worker-per-task matching and leaves multi-worker assignment for a later extension.
@@ -344,6 +385,9 @@ Phase 11 complete on `feature/phase11-intelligent-assistant`; ready for review/m
 | Phase 11 stays offline and Qt-free outside GUI | The user explicitly requires no real LLM, no API keys, no network dependency, and Qt types only in `gui`. |
 | Phase 11 analyzes current Batch Results rows | This reuses the existing CSV/filter pipeline and avoids changing simulation or batch experiment semantics. |
 | `MockLLMAssistant` is deterministic and local | It proves the interface boundary without introducing online model behavior. |
+| Phase 12 keeps real LLM usage optional | The existing offline assistant remains usable without network access or credentials. |
+| Phase 12 reads provider credentials from environment variables only | This satisfies the user's real-provider request without storing secrets in the repository. |
+| Phase 12 tests use fake HTTP transport | Core behavior can be verified without network dependency or a real API key. |
 
 ## Errors Encountered
 | Error | Attempt | Resolution |

@@ -15,6 +15,8 @@
 #include "simulation/SimulationEngine.h"
 #include "data/CsvExporter.h"
 #include "agent/ExperimentAgent.h"
+#include "agent/HttpClient.h"
+#include "agent/OpenAICompatibleAssistant.h"
 #include "agent/ReportGenerator.h"
 #include "agent/RuleBasedConfigParser.h"
 #include "agent/MockLLMAssistant.h"
@@ -33,6 +35,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -53,6 +56,51 @@ bool near(double lhs, double rhs, double tolerance = 1e-9)
 bool contains(const std::string& value, const std::string& expected)
 {
     return value.find(expected) != std::string::npos;
+}
+
+class FakeHttpClient : public gts::IHttpClient {
+public:
+    mutable int callCount{};
+    mutable gts::HttpRequest lastRequest;
+    gts::HttpResponse response;
+
+    [[nodiscard]] gts::HttpResponse postJson(
+        const gts::HttpRequest& request) const override
+    {
+        ++callCount;
+        lastRequest = request;
+        return response;
+    }
+};
+
+void setEnvValue(const std::string& name, const std::string& value)
+{
+#ifdef _WIN32
+    _putenv_s(name.c_str(), value.c_str());
+#else
+    setenv(name.c_str(), value.c_str(), 1);
+#endif
+}
+
+void clearEnvValue(const std::string& name)
+{
+#ifdef _WIN32
+    _putenv_s(name.c_str(), "");
+#else
+    unsetenv(name.c_str());
+#endif
+}
+
+bool hasHeader(const std::vector<std::pair<std::string, std::string>>& headers,
+               const std::string& name,
+               const std::string& value)
+{
+    for (const auto& [headerName, headerValue] : headers) {
+        if (headerName == name && headerValue == value) {
+            return true;
+        }
+    }
+    return false;
 }
 
 std::string writeTempCsv(const std::string& name, const std::string& content)
@@ -407,6 +455,70 @@ int main()
             "MockLLMAssistant should return a deterministic local response.");
     require(contains(mockResponse.analysisMarkdown, "Mock LLM Assistant"),
             "MockLLMAssistant output should be clearly labeled as local mock output.");
+
+    LLMProviderConfig missingKeyConfig;
+    missingKeyConfig.apiKeyEnvName = "GEOTASKSHIELD_TEST_MISSING_API_KEY";
+    missingKeyConfig.modelEnvName = "GEOTASKSHIELD_TEST_MISSING_MODEL";
+    missingKeyConfig.baseUrlEnvName = "GEOTASKSHIELD_TEST_MISSING_BASE_URL";
+    clearEnvValue(missingKeyConfig.apiKeyEnvName);
+    clearEnvValue(missingKeyConfig.modelEnvName);
+    clearEnvValue(missingKeyConfig.baseUrlEnvName);
+    auto missingKeyHttp = std::make_shared<FakeHttpClient>();
+    OpenAICompatibleAssistant missingKeyAssistant(missingKeyConfig, missingKeyHttp);
+    const AssistantResponse missingKeyResponse =
+        missingKeyAssistant.analyze(assistantRequest);
+    require(!missingKeyResponse.success,
+            "OpenAICompatibleAssistant should fail closed when the API key is missing.");
+    require(missingKeyHttp->callCount == 0,
+            "OpenAICompatibleAssistant should not call HTTP without an API key.");
+    require(contains(missingKeyResponse.analysisMarkdown,
+                     missingKeyConfig.apiKeyEnvName),
+            "OpenAICompatibleAssistant should explain the missing API key environment variable.");
+
+    LLMProviderConfig llmConfig;
+    llmConfig.apiKeyEnvName = "GEOTASKSHIELD_TEST_API_KEY";
+    llmConfig.modelEnvName = "GEOTASKSHIELD_TEST_MODEL";
+    llmConfig.baseUrlEnvName = "GEOTASKSHIELD_TEST_BASE_URL";
+    llmConfig.defaultBaseUrl = "https://dashscope.example.test/compatible-mode/v1/";
+    llmConfig.defaultModel = "fallback-model";
+    setEnvValue(llmConfig.apiKeyEnvName, "test-key");
+    setEnvValue(llmConfig.modelEnvName, "kimi-k2.5");
+    clearEnvValue(llmConfig.baseUrlEnvName);
+
+    auto fakeHttp = std::make_shared<FakeHttpClient>();
+    fakeHttp->response.success = true;
+    fakeHttp->response.statusCode = 200;
+    fakeHttp->response.body =
+        R"({"choices":[{"message":{"role":"assistant","content":"# LLM Markdown\n\nBest completion rate: remote result."}}]})";
+    OpenAICompatibleAssistant llmAssistant(llmConfig, fakeHttp);
+    AssistantRequest llmRequest = assistantRequest;
+    llmRequest.prompt =
+        "Analyze 12 workers and 6 tasks with laplace. Explain completion rate.";
+    const AssistantResponse llmResponse = llmAssistant.analyze(llmRequest);
+    require(llmResponse.success,
+            "OpenAICompatibleAssistant should return successful Markdown from a valid provider response.");
+    require(contains(llmResponse.analysisMarkdown, "# LLM Markdown"),
+            "OpenAICompatibleAssistant should use assistant content from the provider response.");
+    require(llmResponse.intent.workerCount.has_value() &&
+                llmResponse.intent.workerCount.value() == 12,
+            "OpenAICompatibleAssistant should preserve local parsed intent.");
+    require(fakeHttp->callCount == 1,
+            "OpenAICompatibleAssistant should make one HTTP request when configured.");
+    require(fakeHttp->lastRequest.url ==
+                "https://dashscope.example.test/compatible-mode/v1/chat/completions",
+            "OpenAICompatibleAssistant should call the OpenAI-compatible chat completions endpoint.");
+    require(hasHeader(fakeHttp->lastRequest.headers, "Authorization",
+                      "Bearer test-key"),
+            "OpenAICompatibleAssistant should send the API key as a bearer token.");
+    require(hasHeader(fakeHttp->lastRequest.headers, "Content-Type",
+                      "application/json"),
+            "OpenAICompatibleAssistant should send JSON content.");
+    require(contains(fakeHttp->lastRequest.body, R"("model":"kimi-k2.5")"),
+            "OpenAICompatibleAssistant should read the model name from the environment.");
+    require(contains(fakeHttp->lastRequest.body, llmRequest.prompt),
+            "OpenAICompatibleAssistant should include the user prompt in the request body.");
+    clearEnvValue(llmConfig.apiKeyEnvName);
+    clearEnvValue(llmConfig.modelEnvName);
 
     BatchExperimentRunner batchRunner;
     std::vector<ExperimentScenario> scenarios{

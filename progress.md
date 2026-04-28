@@ -2,6 +2,58 @@
 
 ## Session: 2026-04-28
 
+### Phase 12: Optional Real LLM Provider
+- **Status:** implementation complete, ready for integration
+- Actions taken:
+  - Used `planning-with-files`, `brainstorming`, `test-driven-development`, and `verification-before-completion` workflows for Phase 12.
+  - Restored current plan, findings, progress, and git state from disk.
+  - Confirmed `develop` was clean and created `feature/phase12-real-llm-provider`.
+  - Checked official Aliyun Bailian / Model Studio documentation for OpenAI-compatible Chat Completions configuration.
+  - Recorded that Phase 12 must use environment variables for credentials and keep automated tests network-free.
+  - Added Phase 12 non-Qt red tests for missing-key fail-closed behavior and fake HTTP provider success.
+  - Added Phase 12 GUI smoke red expectations for an assistant provider selector and Aliyun Bailian option.
+  - Ran the non-Qt test target and confirmed the expected red build on missing `agent/HttpClient.h`.
+  - Ran the GUI smoke target and confirmed the expected red build on missing `AgentAssistantWidget` provider-selection test helpers.
+  - Added Qt-free `HttpClient`, `WinHttpClient`, and `OpenAICompatibleAssistant` provider classes.
+  - Wired provider sources into `GeoTaskShieldCore` and linked `winhttp` on Windows.
+  - Added `Agent Assistant` provider selection with local rule-based default and optional `Aliyun Bailian (DashScope)` provider.
+  - Updated README, HANDOFF, and CHANGELOG with Phase 12 provider and environment variable guidance.
+  - Configured user-level `DASHSCOPE_API_KEY`, `DASHSCOPE_MODEL`, and `DASHSCOPE_BASE_URL` environment variables without writing them to repository files.
+  - Ran full non-Qt Debug build and CTest successfully.
+  - Ran full Qt Debug build and CTest successfully.
+  - Ran `git diff --check` successfully; Git only reported expected LF-to-CRLF working-copy warnings.
+  - Ran repository secret scan using the configured DashScope key; no matches were found in repository files.
+  - Checked `GeoTaskShield/agent` for Qt type/include references; no matches were found.
+- Files created/modified so far:
+  - `task_plan.md` (updated)
+  - `findings.md` (updated)
+  - `progress.md` (updated)
+  - `GeoTaskShield/tests/test_core.cpp` (modified)
+  - `GeoTaskShield/gui/tests/test_gui_smoke.cpp` (modified)
+  - `GeoTaskShield/agent/HttpClient.h` (created)
+  - `GeoTaskShield/agent/WinHttpClient.h/.cpp` (created)
+  - `GeoTaskShield/agent/OpenAICompatibleAssistant.h/.cpp` (created)
+  - `GeoTaskShield/CMakeLists.txt` (modified)
+  - `GeoTaskShield/gui/AgentAssistantWidget.h/.cpp` (modified)
+  - `README.md` (modified)
+  - `HANDOFF.md` (modified)
+  - `CHANGELOG.md` (modified)
+- Next:
+  - Commit on the feature branch, merge into `develop`, and push to GitHub.
+
+## Test Results
+| Test | Input | Expected | Actual | Status |
+|------|-------|----------|--------|--------|
+| Phase 12 core red test | `cmake --build out\build\x64-debug --target GeoTaskShieldTests` after adding provider tests | Fails because provider headers do not exist yet | Failed on missing `agent/HttpClient.h` | Expected fail |
+| Phase 12 GUI red test | `cmake --build out\build\x64-debug-qt --target GeoTaskShieldGuiSmokeTests` after adding provider selector expectations | Fails because GUI provider helpers do not exist yet | Failed on missing `hasProviderSelectionForTesting`, `hasProviderOptionForTesting`, and `setProviderForTesting` | Expected fail |
+| Phase 12 core green increment | `cmake --preset x64-debug && cmake --build out\build\x64-debug --target GeoTaskShieldTests && out\build\x64-debug\GeoTaskShield\GeoTaskShieldTests.exe` | Provider fake HTTP tests pass | Build exit 0; test executable exit 0 | Pass |
+| Phase 12 GUI green increment | `cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt --target GeoTaskShieldGuiSmokeTests && ctest --test-dir out\build\x64-debug-qt --output-on-failure -R GeoTaskShieldGuiSmokeTests` | Provider selector smoke test passes | `1/1 Test #2: GeoTaskShieldGuiSmokeTests Passed` | Pass |
+| Phase 12 full non-Qt verification | `cmake --preset x64-debug && cmake --build out\build\x64-debug && ctest --test-dir out\build\x64-debug --output-on-failure` | Build and core tests pass | `1/1 Test #1: GeoTaskShieldCoreTests Passed` | Pass |
+| Phase 12 full Qt verification | `cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt && ctest --test-dir out\build\x64-debug-qt --output-on-failure` | Qt build, core tests, and GUI smoke tests pass | `2/2 tests passed` | Pass |
+| Phase 12 diff check | `git diff --check` | No whitespace errors | No whitespace errors; only LF-to-CRLF working-copy warnings | Pass |
+| Phase 12 secret scan | Search repository files excluding `.git`, `out`, and `.vs` for the configured DashScope key | No API key committed | No matches | Pass |
+| Phase 12 Qt-free agent boundary check | Search `GeoTaskShield/agent` for Qt type/include references | No Qt references | No matches | Pass |
+
 ### Phase 11: Intelligent Experiment Assistant
 - **Status:** complete
 - Actions taken:
