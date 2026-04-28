@@ -1,8 +1,8 @@
 # GeoTaskShield 项目交接文档
 
-更新时间：2026-04-27
+更新时间：2026-04-28
 项目路径：`D:\VS2026_Projects\GeoTaskShield`
-当前状态：阶段 1、阶段 2、阶段 3、阶段 4、阶段 5、阶段 6 已完成并通过验收。当前发布版本：`v0.6.0`。
+当前状态：阶段 1 至阶段 8 已完成并通过本地验收。阶段 8 将阶段 7 GUI 批量结果可视化固化为 `v0.7.0` 发布版。当前发布版本：`v0.7.0`。
 当前开发分支：`develop`
 
 ---
@@ -20,6 +20,7 @@ GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配
 - 在控制台输出算法对比结果；
 - 导出 CSV 实验结果；
 - 通过 Qt Widgets GUI 选择参数、运行仿真、显示指标和二维分配图；
+- 通过 Qt Widgets GUI 的 `Batch Results` 页加载批量实验 CSV、筛选、排序、查看摘要卡片和单指标柱状图；
 - 通过本地规则型 AIAgent 解析自然语言实验请求并生成 Markdown 报告；
 - 一键运行批量实验并导出 CSV/Markdown 报告。
 
@@ -33,12 +34,13 @@ GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配
 
 | 分支 | 说明 |
 |---|---|
-| `main` | `v0.6.0` 发布分支，远端默认分支 |
-| `develop` | 已回合 `v0.6.0` 发布整理结果 |
+| `main` | `v0.7.0` 发布分支，远端默认分支 |
+| `develop` | 已回合 `v0.7.0` 发布整理结果 |
 | `feature/phase3-qt-gui` | 阶段 3 功能分支，提交 `3b66cbf feat(gui): add Qt Widgets simulation UI` |
 | `feature/phase4-ai-agent-report` | 阶段 4 功能分支 |
 | `feature/phase5-experiment-enhancements` | 阶段 5 功能分支，已合入 `develop` |
 | `release/phase6-engineering-release` | 阶段 6 发布准备分支 |
+| `release/v0.7.0` | 阶段 8 / `v0.7.0` 发布准备分支 |
 
 后续 Git 操作要求：
 
@@ -64,6 +66,7 @@ GeoTaskShield/
   progress.md
   phase2_results.csv
   docs/
+    demo/
     superpowers/
       specs/
       plans/
@@ -408,7 +411,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package_windows.ps1
 默认输出：
 
 ```text
-out\package\GeoTaskShield-v0.6.0-windows-x64.zip
+out\package\GeoTaskShield-v0.7.0-windows-x64.zip
 ```
 
 打包输出位于 `out/`，属于生成产物，不提交进 Git。
@@ -454,7 +457,9 @@ out\package\GeoTaskShield-v0.6.0-windows-x64.zip
 
 ---
 
-## 10. 后续开发计划
+## 10. 已完成阶段补充记录
+
+以下内容记录阶段 5 之后的已完成增量，避免把已完成阶段误写成后续计划。
 
 ### 阶段 5：实验能力增强
 
@@ -546,17 +551,104 @@ phase5_batch_report.md
 - `v0.6.0` 发布包生成于 `out\package\GeoTaskShield-v0.6.0-windows-x64.zip`；
 - 发布包属于生成产物，不提交进 Git。
 
+### 阶段 7：GUI 数据可视化增强
+
+目标：在不改变核心算法、Agent 或 BatchExperiment 语义的前提下，为 Qt GUI 增加批量实验 CSV 结果分析与展示页。
+
+已完成内容：
+
+- 新增 Qt-free 批量结果展示层：
+
+```text
+GeoTaskShield/experiment/
+  BatchResultRecord.h
+  BatchResultCsvLoader.h/.cpp
+  BatchResultModel.h/.cpp
+```
+
+- 新增 Qt Widgets 批量结果页面：
+
+```text
+GeoTaskShield/gui/
+  BatchResultsWidget.h/.cpp
+  MetricBarChart.h/.cpp
+```
+
+- `MainWindow` 改为标签页结构：
+  - `Simulation`：保留原有单次仿真页面；
+  - `Batch Results`：加载和分析批量实验 CSV。
+- `BatchResultCsvLoader` 支持：
+  - 当前 `phase5_batch_results.csv` snake_case 表头；
+  - 常见字段 alias，如 `average_true_distance`、`runtimeMs`、`privacyUtilityRatio`；
+  - UTF-8 BOM；
+  - CRLF/LF；
+  - quoted fields；
+  - 缺列和非法数字的明确错误信息。
+- `BatchResultModel` 支持：
+  - 按 privacy/algorithm 筛选；
+  - 按字段类型排序；
+  - 计算最佳 `completionRate`、最佳 `privacyUtilityRatio`、最佳 `fairnessIndex`、最低 `averagePrivacyLoss`；
+  - 生成 `scenario | privacy | algorithm` 标签的柱状图数据。
+- `BatchResultsWidget` 支持：
+  - 打开 `phase5_batch_results.csv` 或同结构 CSV；
+  - 左侧加载和筛选控件；
+  - 摘要卡片显示指标值和来源实验配置；
+  - 自绘单指标柱状图；
+  - 当前行详情；
+  - 可排序结果表格，数值列按数值排序。
+
+阶段 7 验收结果：
+
+- 非 Qt Debug 构建和核心测试通过；
+- Qt Debug 构建和 GUI smoke test 通过；
+- 未引入 Qt Charts；
+- 未修改 `SimulationEngine`、`PrivacyFactory`、`AssignmentAlgorithmFactory`、Agent 或 `BatchExperiment` 语义。
+
+### 阶段 8：Release and Demo Hardening
+
+目标：将阶段 7 的 GUI 批量结果可视化成果固化为 `v0.7.0` 发布版，而不是继续新增功能。
+
+已完成内容：
+
+1. 更新版本号：
+   - CMake project version：`0.7.0`；
+   - Windows 打包默认版本：`v0.7.0`。
+2. 更新 README：
+   - Batch Results 页功能说明；
+   - GUI demo 使用流程；
+   - 示例 CSV 表头；
+   - Simulation tab 和 Batch Results tab 截图说明。
+3. 新增 demo 指南：
+
+```text
+docs/demo/v0.7.0-gui-demo-guide.md
+```
+
+4. 更新 release 文档：
+   - `CHANGELOG.md` 增加 `v0.7.0`；
+   - `HANDOFF.md` 更新阶段 8、版本和后续方向。
+5. 更新 Windows 打包脚本：
+   - 默认输出 `GeoTaskShield-v0.7.0-windows-x64.zip`；
+   - release 包继续包含 `phase5_batch_results.csv`；
+   - release 包新增 `docs/demo/` demo 指南。
+
+阶段 8 验收结果：
+
+- 非 Qt Debug 构建和核心测试通过；
+- Qt Debug 构建和 GUI smoke test 通过；
+- Qt Release 构建通过；
+- Windows ZIP 打包脚本通过；
+- `v0.7.0` 发布包生成于 `out\package\GeoTaskShield-v0.7.0-windows-x64.zip`；
+- 发布包包含 `phase5_batch_results.csv` 和 `docs/demo/v0.7.0-gui-demo-guide.md`；
+- 未新增 Markdown 报告预览、筛选结果导出、Qt Graphs 或在线 LLM。
+
 ---
 
 ## 11. 建议下一步
 
-建议下一轮进入阶段 7：GUI 数据可视化增强。
+建议下一轮进入 Phase 9，再考虑新增功能：
 
-可选方向：
-
-1. 引入 Qt Charts 或自绘图表，展示完成率、隐私损失、公平性和隐私效用比；
-2. 在 GUI 中加载 `phase5_batch_results.csv` 并展示批量实验对比；
-3. 将 batch demo 的 Markdown 报告能力接入 GUI；
+1. 在 GUI 中增加 Markdown 报告预览或导出入口；
+2. 为 Batch Results 增加导出当前筛选结果能力；
+3. 如后续需要复杂交互图表，再评估 Qt Graphs；
 4. 继续拆分核心测试，或评估引入 GoogleTest/Catch2。
-
-阶段 7 建议仍保持核心算法不变，优先增强展示和报告能力。

@@ -2,7 +2,7 @@
 
 GeoTaskShield is a C++20/CMake simulator for privacy-preserving task allocation in mobile crowdsensing. It models workers and sensing tasks on a 2D map, applies location privacy mechanisms, runs task assignment algorithms, evaluates utility/privacy metrics, and presents results through console, CSV, Qt Widgets GUI, and a local experiment-report agent.
 
-Current release: `v0.6.0`.
+Current release: `v0.7.0`. This release hardens the Phase 7 GUI batch-results visualization work.
 
 ## Current Status
 
@@ -14,6 +14,8 @@ Completed phases:
 - Phase 4: Local rule-based AIAgent and Markdown experiment report generation.
 - Phase 5: Batch experiment support, additional metrics, and richer CSV/Markdown export.
 - Phase 6: Engineering cleanup, release packaging, style rules, and `v0.6.0` release preparation.
+- Phase 7: GUI batch CSV result analysis and visualization, merged into `develop`.
+- Phase 8: Release and demo hardening for `v0.7.0`.
 
 ## Features
 
@@ -35,7 +37,8 @@ Completed phases:
   - algorithm runtime
 - Console 3 x 3 privacy/algorithm comparison.
 - CSV export to `phase2_results.csv`.
-- Qt Widgets GUI with parameter panel, map canvas, result panel, and log panel.
+- Qt Widgets GUI with a Simulation tab and a Batch Results analysis tab.
+- Batch Results CSV loading, filters, summary cards, sortable table, and a lightweight self-drawn bar chart.
 - Local natural-language experiment agent.
 - Markdown experiment report generation.
 - Batch experiment runner.
@@ -144,6 +147,38 @@ out\build\x64-debug-qt\GeoTaskShield\GeoTaskShieldGui.exe
 
 `GeoTaskShieldGui` runs `windeployqt` after build on Windows. Non-Qt executables such as `GeoTaskShield.exe` and `GeoTaskShieldTests.exe` do not need `windeployqt`.
 
+The GUI contains:
+
+- `Simulation`: run a single simulation with parameter controls, map canvas, metrics, and logs.
+- `Batch Results`: open `phase5_batch_results.csv` or a same-structure CSV, filter by privacy/algorithm, select a metric, inspect summary cards, view a bar chart, and sort the detail table.
+
+### Batch Results Demo
+
+The `Batch Results` tab is intended for reviewing batch experiment outputs without rerunning the batch experiment.
+
+Demo flow:
+
+1. Run `GeoTaskShieldGui.exe`.
+2. Open the `Batch Results` tab.
+3. Click `Open CSV`.
+4. Select `phase5_batch_results.csv`.
+5. Filter by privacy mechanism or assignment algorithm.
+6. Select a metric such as `completionRate`, `privacyUtilityRatio`, `fairnessIndex`, or `averagePrivacyLoss`.
+7. Sort the table by clicking column headers and select rows to inspect details.
+
+Example CSV header:
+
+```text
+scenario,workers,tasks,grid_size,k,epsilon,privacy,algorithm,completed_tasks,total_tasks,completion_rate,average_moving_distance,total_reward,average_privacy_loss,algorithm_runtime_ms,user_load_stddev,fairness_index,privacy_utility_ratio,timeout_rate
+```
+
+Recommended screenshots for reports or demos:
+
+- `Simulation` tab after running a simulation, showing parameter controls, map canvas, metrics, and logs.
+- `Batch Results` tab after loading `phase5_batch_results.csv`, showing filters, summary cards, the bar chart, selected-row details, and the sortable table.
+
+See [docs/demo/v0.7.0-gui-demo-guide.md](docs/demo/v0.7.0-gui-demo-guide.md) for a step-by-step demo script and screenshot checklist.
+
 ### Release Build and Package
 
 Build the Release GUI preset:
@@ -161,8 +196,10 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package_windows.ps1
 The package is generated under:
 
 ```text
-out/package/GeoTaskShield-v0.6.0-windows-x64.zip
+out/package/GeoTaskShield-v0.7.0-windows-x64.zip
 ```
+
+The package includes the demo CSV `phase5_batch_results.csv` and the GUI demo guide under `docs/demo/`.
 
 Package outputs under `out/` are generated artifacts and are not committed.
 
@@ -208,16 +245,18 @@ feat(agent): add experiment report agent
 docs(handoff): update phase 4 status
 ```
 
-Release branches use `release/*`. The Phase 6 release branch is:
+Release branches use `release/*`. Recent release branches:
 
 ```text
 release/phase6-engineering-release
+release/v0.7.0
 ```
 
-The Phase 6 release tag is:
+Recent release tags:
 
 ```text
 v0.6.0
+v0.7.0
 ```
 
 ## Code Style
@@ -240,4 +279,4 @@ v0.6.0
 - Hungarian assignment supports one task per expanded worker slot, not strict multi-worker task optimization.
 - Laplace privacy is a simulator-level coordinate perturbation, not a full formal differential privacy proof.
 - The AIAgent parser is rule-based and supports common prompt patterns only.
-- Qt Charts integration is not implemented yet; Phase 5 exports report-ready CSV/Markdown instead.
+- The Batch Results tab uses lightweight custom painting rather than Qt Charts.

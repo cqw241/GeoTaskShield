@@ -1,6 +1,16 @@
 # Findings & Decisions
 
 ## Requirements
+- Enter GeoTaskShield Phase 8: release and demo hardening for `v0.7.0`.
+- Phase 8 must freeze feature scope and avoid Markdown preview, filtered export, Qt Graphs, and online LLM work.
+- Release package must include `phase5_batch_results.csv` or equivalent demo data.
+- Release package should include GUI demo and screenshot guidance for Simulation and Batch Results tabs.
+- Enter GeoTaskShield Phase 7: GUI batch CSV result visualization.
+- Phase 7 must only add CSV result analysis/display in the GUI.
+- Do not change `SimulationEngine`, privacy/assignment factories, Agent, or `BatchExperiment` semantics.
+- Store Qt-free batch result record/loading/model code outside `gui`, in the non-Qt core build.
+- Support current Phase 5 snake_case CSV headers plus selected aliases for distance, runtime, and privacy-utility fields.
+- Table sorting must be numeric for numeric fields.
 - Enter GeoTaskShield Phase 5: experiment capability enhancement.
 - Enter GeoTaskShield Phase 6: engineering cleanup and release.
 - Prepare a Git Flow release from the completed Phase 1-5 implementation.
@@ -35,6 +45,9 @@
 - Existing core test is a single executable with simple `require` assertions; Phase 2 can extend it without adding a test framework dependency.
 - Console entry currently prints one experiment result; Phase 2 should convert it to a compact comparison table.
 - `EvaluationMetrics` already exposes all values needed for console comparison and CSV export.
+- Current `phase5_batch_results.csv` header is `scenario,workers,tasks,grid_size,k,epsilon,privacy,algorithm,completed_tasks,total_tasks,completion_rate,average_moving_distance,total_reward,average_privacy_loss,algorithm_runtime_ms,user_load_stddev,fairness_index,privacy_utility_ratio,timeout_rate`.
+- Phase 7 uses `experiment/BatchResultCsvLoader` and `experiment/BatchResultModel` as Qt-free display/data helpers.
+- Phase 7 GUI uses `BatchResultsWidget` and `MetricBarChart` under `gui`.
 
 ## Technical Decisions
 | Decision | Rationale |
@@ -60,6 +73,11 @@
 | Phase 6 should use `release/phase6-engineering-release` | The task is release preparation, and `git_guide.md` includes `release/*` for this purpose. |
 | Phase 6 should tag `v0.6.0` after verification | There are no existing tags, and the phase number gives a clear first release identifier. |
 | Packaging should be script-based and generated under `out/package` | This keeps Qt DLLs and ZIP artifacts out of Git while making local delivery repeatable. |
+| Phase 7 puts batch CSV analysis in `experiment` | The loader/model are Qt-free and need non-Qt test coverage. |
+| Phase 7 avoids Qt Charts | Qt Charts is deprecated in Qt 6.11 and a custom single-metric bar chart is enough for this phase. |
+| Summary cards include source identity | Metric values alone are not enough to identify which scenario/privacy/algorithm produced the best result. |
+| Phase 8 uses `release/v0.7.0` | The user requested a release branch to stabilize Phase 7 outputs into a versioned package. |
+| Phase 8 keeps `phase5_batch_results.csv` as demo data | It is the current real batch CSV output and already matches the Batch Results loader. |
 
 ## Issues Encountered
 | Issue | Resolution |
@@ -73,6 +91,8 @@
 | Secret scan found no committed API key text | Searched project files excluding `.git`, `out`, and `.vs`; no provided key string was found. |
 | Phase 5 started from `develop` after syncing `main` publish notes | Merged `main` into `develop`, then created `feature/phase5-experiment-enhancements`. |
 | Phase 6 started after Phase 5 feature completion | Merged `feature/phase5-experiment-enhancements` into `develop`, then created `release/phase6-engineering-release`. |
+| Phase 7 started from `develop` | Created `feature/phase7-gui-batch-results`; implementation is GUI-only CSV analysis. |
+| Phase 8 started from `develop` | Created `release/v0.7.0`; no new runtime features are in scope. |
 
 ## Resources
 - Project specification: `D:\VS2026_Projects\GeoTaskShield\GeoTaskShield.md`

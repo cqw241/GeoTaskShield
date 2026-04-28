@@ -20,6 +20,8 @@ set(GEOTASKSHIELD_CORE_SOURCES
     "agent/ExperimentAgent.cpp"
     "experiment/BatchExperiment.cpp"
     "experiment/BatchExperimentExporter.cpp"
+    "experiment/BatchResultCsvLoader.cpp"
+    "experiment/BatchResultModel.cpp"
 )
 
 if (MSVC)
@@ -81,8 +83,10 @@ if (GEOTASKSHIELD_BUILD_GUI)
         HINTS "${GEOTASKSHIELD_QT_PREFIX}/bin")
 
     set(GEOTASKSHIELD_GUI_SOURCES
+        "gui/BatchResultsWidget.cpp"
         "gui/MainWindow.cpp"
         "gui/MapCanvas.cpp"
+        "gui/MetricBarChart.cpp"
         "gui/ParameterPanel.cpp"
         "gui/ResultPanel.cpp"
         "gui/LogPanel.cpp"
@@ -134,3 +138,6 @@ install(FILES
     "${CMAKE_SOURCE_DIR}/phase5_batch_results.csv"
     "${CMAKE_SOURCE_DIR}/phase5_batch_report.md"
     DESTINATION share/GeoTaskShield)
+
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/docs/demo"
+    DESTINATION share/GeoTaskShield/docs)

@@ -1,6 +1,7 @@
 #include "gui/MainWindow.h"
 
 #include "assignment/AssignmentAlgorithmFactory.h"
+#include "gui/BatchResultsWidget.h"
 #include "gui/LogPanel.h"
 #include "gui/MapCanvas.h"
 #include "gui/ParameterPanel.h"
@@ -9,6 +10,7 @@
 
 #include <QPushButton>
 #include <QSplitter>
+#include <QTabWidget>
 #include <QVBoxLayout>
 
 #include <exception>
@@ -26,7 +28,12 @@ MainWindow::MainWindow(QWidget* parent)
     auto* root = new QVBoxLayout(central);
     root->setContentsMargins(8, 8, 8, 8);
 
-    auto* contentSplitter = new QSplitter(Qt::Horizontal, central);
+    auto* tabs = new QTabWidget(central);
+    auto* simulationPage = new QWidget(tabs);
+    auto* simulationRoot = new QVBoxLayout(simulationPage);
+    simulationRoot->setContentsMargins(0, 0, 0, 0);
+
+    auto* contentSplitter = new QSplitter(Qt::Horizontal, simulationPage);
     parameterPanel_ = new ParameterPanel(contentSplitter);
     mapCanvas_ = new MapCanvas(contentSplitter);
     resultPanel_ = new ResultPanel(contentSplitter);
@@ -37,9 +44,15 @@ MainWindow::MainWindow(QWidget* parent)
     contentSplitter->setStretchFactor(1, 1);
     contentSplitter->setStretchFactor(2, 0);
 
-    logPanel_ = new LogPanel(central);
-    root->addWidget(contentSplitter, 1);
-    root->addWidget(logPanel_, 0);
+    logPanel_ = new LogPanel(simulationPage);
+    simulationRoot->addWidget(contentSplitter, 1);
+    simulationRoot->addWidget(logPanel_, 0);
+
+    tabs->addTab(simulationPage, "Simulation");
+    batchResultsWidget_ = new BatchResultsWidget(tabs);
+    tabs->addTab(batchResultsWidget_, "Batch Results");
+
+    root->addWidget(tabs, 1);
     setCentralWidget(central);
 
     connect(parameterPanel_->runButton(), &QPushButton::clicked, this, [this]() {

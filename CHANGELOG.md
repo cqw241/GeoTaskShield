@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.7.0 - 2026-04-28
+
+### Added
+
+- Qt GUI `Batch Results` tab for loading and analyzing Phase 5-style batch CSV files.
+- Batch result CSV parsing and analysis helpers in the Qt-free `experiment` module.
+- Lightweight self-drawn metric bar chart for batch result comparison.
+- Demo guide and screenshot checklist: `docs/demo/v0.7.0-gui-demo-guide.md`.
+
+### Changed
+
+- Updated README and handoff documentation for the Phase 7 GUI visualization workflow.
+- Updated Windows packaging defaults to produce `GeoTaskShield-v0.7.0-windows-x64.zip`.
+- Included demo guide files in the Windows release package.
+
+### Verification
+
+- Non-Qt Debug build and CTest.
+- Qt Debug build and CTest.
+- Qt Release build.
+- Windows packaging script.
+
 ## v0.6.0 - 2026-04-27
 
 ### Added

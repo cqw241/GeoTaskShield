@@ -1,10 +1,28 @@
-# Task Plan: GeoTaskShield Phase 6 - Engineering Release
+# Task Plan: GeoTaskShield Phase 8 - v0.7.0 Release Hardening
 
 ## Goal
-Prepare GeoTaskShield for a cleaner C++/Qt delivery by integrating Phase 5, removing obsolete template files, adding style and packaging conventions, and publishing a verified release tag.
+Harden Phase 7 into a verified `v0.7.0` release package with updated documentation, demo guidance, package contents, and Git Flow publishing.
 
 ## Current Phase
-Phase 6 complete
+Phase 8 complete; Phase 9 deferred
+
+## Phase 8 Success Criteria
+- Work happens on `release/v0.7.0`.
+- Do not add Markdown report preview, filtered-result export, Qt Graphs, online LLM, or new runtime features.
+- Update project version, README, CHANGELOG, HANDOFF, demo guide, and package script for `v0.7.0`.
+- Package includes `phase5_batch_results.csv` and `docs/demo/v0.7.0-gui-demo-guide.md`.
+- Verify non-Qt Debug build/tests, Qt Debug build/tests, Qt Release build, and Windows ZIP packaging.
+- Merge release into `main`, tag `v0.7.0`, merge back into `develop`, and push branches/tags.
+
+## Phase 7 Success Criteria
+- Work happens on `feature/phase7-gui-batch-results`.
+- Add Qt-free batch result loading/model classes under `GeoTaskShield/experiment`.
+- Keep Qt types isolated to `GeoTaskShield/gui` widgets.
+- Load current `phase5_batch_results.csv` and same-structure CSV files.
+- Support privacy/algorithm filtering, metric selection, summary cards, single-metric bar chart, detail table, and numeric sorting.
+- Summary cards include both metric values and `scenario + privacy + algorithm` source context.
+- Do not change `SimulationEngine`, factories, Agent, or `BatchExperiment` semantics.
+- Non-Qt and Qt CTest targets pass.
 
 ## Phase 6 Success Criteria
 - Phase 5 is merged into `develop`.
@@ -213,6 +231,53 @@ Phase 6 complete
 - [x] Merge to `main`, tag `v0.6.0`, merge back to `develop`, and push
 - **Status:** complete
 
+### Phase 25: Phase 7 Design and Plan
+- [x] Create `feature/phase7-gui-batch-results`
+- [x] Write Phase 7 design document
+- [x] Incorporate review feedback about file boundaries, CSV aliases, numeric sorting, and chart labels
+- [x] Write Phase 7 implementation plan
+- **Status:** complete
+
+### Phase 26: Batch Result Data Layer
+- [x] Add failing tests for CSV loading and result modeling
+- [x] Add `BatchResultRecord`
+- [x] Add `BatchResultCsvLoader`
+- [x] Add `BatchResultModel`
+- [x] Wire data layer into `GeoTaskShieldCore`
+- [x] Run non-Qt core tests
+- **Status:** complete
+
+### Phase 27: Batch Results GUI
+- [x] Add failing GUI smoke test expectations
+- [x] Add `MetricBarChart`
+- [x] Add `BatchResultsWidget`
+- [x] Integrate `Batch Results` tab into `MainWindow`
+- [x] Verify existing Simulation tab still runs
+- [x] Run Qt GUI smoke test
+- **Status:** complete
+
+### Phase 28: Phase 7 Verification and Documentation
+- [x] Run full non-Qt Debug verification
+- [x] Run full Qt Debug verification
+- [x] Update README, HANDOFF, planning files, and progress log
+- **Status:** complete
+
+### Phase 29: Phase 8 Release Branch and Docs
+- [x] Create `release/v0.7.0` from `develop`
+- [x] Update version metadata to `0.7.0` / `v0.7.0`
+- [x] Update README with Batch Results demo usage and screenshot guidance
+- [x] Add `docs/demo/v0.7.0-gui-demo-guide.md`
+- [x] Update CHANGELOG and HANDOFF
+- **Status:** complete
+
+### Phase 30: Phase 8 Package Hardening
+- [x] Update Windows package script default output to `v0.7.0`
+- [x] Include `docs/demo` in the release package
+- [x] Keep `phase5_batch_results.csv` in the release package
+- [x] Run release verification and package checks
+- [x] Publish `v0.7.0`
+- **Status:** complete
+
 ## Key Questions
 1. Should Hungarian matching support tasks requiring multiple workers in Phase 2?
    - Decision: no. Phase 2 implements one-worker-per-task matching and leaves multi-worker assignment for a later extension.
@@ -230,6 +295,9 @@ Phase 6 complete
 | Use deterministic random seeds in tests | Privacy noise and data generation must be reproducible for reliable verification. |
 | Phase 6 uses a `release/*` branch | The work is delivery hardening and Git Flow explicitly reserves release branches for release preparation. |
 | Tag Phase 6 as `v0.6.0` | The project has no prior tags; using the phase number keeps the first release tag unambiguous. |
+| Phase 7 stores CSV analysis in `experiment` rather than `gui` | The data/model layer is Qt-free and belongs in the non-Qt core build; only widgets live in `gui`. |
+| Phase 7 uses custom chart painting, not Qt Charts | Qt Charts is deprecated in Qt 6.11 and this phase only needs a single-metric bar chart. |
+| Phase 8 freezes features for release hardening | The user explicitly deferred report preview, filtered export, Qt Graphs, and online LLM work to Phase 9. |
 
 ## Errors Encountered
 | Error | Attempt | Resolution |
