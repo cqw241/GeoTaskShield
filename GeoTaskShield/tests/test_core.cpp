@@ -479,10 +479,13 @@ int main()
     llmConfig.apiKeyEnvName = "GEOTASKSHIELD_TEST_API_KEY";
     llmConfig.modelEnvName = "GEOTASKSHIELD_TEST_MODEL";
     llmConfig.baseUrlEnvName = "GEOTASKSHIELD_TEST_BASE_URL";
+    llmConfig.timeoutMsEnvName = "GEOTASKSHIELD_TEST_TIMEOUT_MS";
     llmConfig.defaultBaseUrl = "https://dashscope.example.test/compatible-mode/v1/";
     llmConfig.defaultModel = "fallback-model";
+    llmConfig.requestTimeoutMs = 4321;
     setEnvValue(llmConfig.apiKeyEnvName, "test-key");
     setEnvValue(llmConfig.modelEnvName, "kimi-k2.5");
+    setEnvValue(llmConfig.timeoutMsEnvName, "2468");
     clearEnvValue(llmConfig.baseUrlEnvName);
 
     auto fakeHttp = std::make_shared<FakeHttpClient>();
@@ -517,8 +520,49 @@ int main()
             "OpenAICompatibleAssistant should read the model name from the environment.");
     require(contains(fakeHttp->lastRequest.body, llmRequest.prompt),
             "OpenAICompatibleAssistant should include the user prompt in the request body.");
+    require(fakeHttp->lastRequest.timeoutMs == 2468,
+            "OpenAICompatibleAssistant should read timeout milliseconds from the environment.");
+
+    setEnvValue(llmConfig.timeoutMsEnvName, "not-a-number");
+    fakeHttp->response.success = true;
+    fakeHttp->response.statusCode = 200;
+    fakeHttp->response.body =
+        R"({"choices":[{"message":{"role":"assistant","content":"# LLM Markdown"}}]})";
+    const AssistantResponse invalidTimeoutResponse =
+        llmAssistant.analyze(llmRequest);
+    require(invalidTimeoutResponse.success,
+            "OpenAICompatibleAssistant should ignore invalid timeout environment values.");
+    require(fakeHttp->lastRequest.timeoutMs == 4321,
+            "OpenAICompatibleAssistant should fall back to configured timeout for invalid timeout values.");
+
+    fakeHttp->response = HttpResponse{false, 504, {}, "request timed out"};
+    const AssistantResponse timeoutResponse = llmAssistant.analyze(llmRequest);
+    require(!timeoutResponse.success,
+            "OpenAICompatibleAssistant should report HTTP transport failures.");
+    require(contains(timeoutResponse.analysisMarkdown, "request timed out"),
+            "Provider fallback should include the transport failure message.");
+    require(contains(timeoutResponse.analysisMarkdown, "Local Analysis Fallback"),
+            "Provider fallback should preserve local analysis after transport failure.");
+
+    fakeHttp->response = HttpResponse{true, 200, R"({"choices":[]})", {}};
+    const AssistantResponse emptyContentResponse =
+        llmAssistant.analyze(llmRequest);
+    require(!emptyContentResponse.success,
+            "OpenAICompatibleAssistant should reject provider responses without Markdown content.");
+    require(contains(emptyContentResponse.analysisMarkdown,
+                     "Local Analysis Fallback"),
+            "Provider fallback should preserve local analysis for empty provider content.");
+
+    fakeHttp->response = HttpResponse{true, 200, R"({"unexpected":true})", {}};
+    const AssistantResponse malformedResponse = llmAssistant.analyze(llmRequest);
+    require(!malformedResponse.success,
+            "OpenAICompatibleAssistant should reject malformed provider responses.");
+    require(contains(malformedResponse.analysisMarkdown,
+                     "did not contain assistant Markdown content"),
+            "Malformed provider responses should explain the missing Markdown content.");
     clearEnvValue(llmConfig.apiKeyEnvName);
     clearEnvValue(llmConfig.modelEnvName);
+    clearEnvValue(llmConfig.timeoutMsEnvName);
 
     BatchExperimentRunner batchRunner;
     std::vector<ExperimentScenario> scenarios{

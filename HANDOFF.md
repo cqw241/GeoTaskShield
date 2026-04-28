@@ -2,8 +2,8 @@
 
 更新时间：2026-04-28
 项目路径：`D:\VS2026_Projects\GeoTaskShield`
-当前状态：阶段 1 至阶段 12 已完成并通过本地验收，Demo Readiness 已固化为 `v0.9.0` 发布包。当前本地基线已从 `main` 快进同步到 `develop`，后续新功能应从 `develop` 创建 `feature/*` 分支。
-当前开发分支：`develop`
+当前状态：阶段 1 至阶段 12 已完成并通过本地验收，Demo Readiness 已固化为 `v0.9.0` 发布包。Phase 13 正在强化真实 LLM provider 的超时、错误回退和 GUI 非阻塞体验。
+当前开发分支：`feature/phase13-agent-provider-hardening`
 
 ---
 
@@ -678,7 +678,8 @@ GeoTaskShield/gui/
 - DashScope 配置使用运行时环境变量：
   - `DASHSCOPE_API_KEY`：必需，真实 provider 缺失时 fail closed，不发起网络请求；
   - `DASHSCOPE_MODEL`：可选，默认 `kimi-k2.5`；
-  - `DASHSCOPE_BASE_URL`：可选，默认 `https://dashscope.aliyuncs.com/compatible-mode/v1`。
+  - `DASHSCOPE_BASE_URL`：可选，默认 `https://dashscope.aliyuncs.com/compatible-mode/v1`；
+  - `DASHSCOPE_TIMEOUT_MS`：可选，默认 `15000` 毫秒。
 - 自动化测试通过 fake HTTP transport 验证请求体、鉴权 header 和响应解析，不依赖网络或真实 API key。
 
 约束：
@@ -686,7 +687,28 @@ GeoTaskShield/gui/
 - 不要把 API key 写入源码、文档、测试、报告或提交历史。
 - 不修改 `SimulationEngine`、`PrivacyFactory`、`AssignmentAlgorithmFactory`、`BatchExperiment` 或算法语义。
 - Qt 类型仍只允许出现在 `gui` 模块。
-- 当前真实 provider 调用为同步请求，后续如需更好 GUI 体验可再引入异步调用和超时 UI。
+- Phase 12 第一版真实 provider 调用为同步请求；Phase 13 已在 GUI 层引入后台线程、状态提示和超时配置。
+
+---
+
+## 14.7. Phase 13: Agent Provider Hardening
+
+目标：在不改变核心仿真、隐私机制、分配算法、批量实验语义且不保存 API key 的前提下，让可选真实 LLM provider 更适合真实 GUI 使用。
+
+当前实现范围：
+
+- `HttpRequest` 增加 `timeoutMs`，`OpenAICompatibleAssistant` 通过 `DASHSCOPE_TIMEOUT_MS` 或默认配置传递 provider 请求超时。
+- `WinHttpClient` 在发送请求前应用 WinHTTP 超时设置。
+- `OpenAICompatibleAssistant` 保持先运行本地 `RuleBasedAssistant`，provider 缺少密钥、请求失败、超时、空内容或非预期响应时返回本地分析 fallback。
+- GUI `Agent Assistant` 的 DashScope provider 路径改为后台线程执行，避免真实网络请求阻塞 Qt UI。
+- GUI 新增 provider 状态文本；运行中禁用 provider 选择和 Analyze 按钮，完成后显示成功或 unavailable/fallback 状态。
+- 自动化测试仍使用 fake HTTP transport 和缺 key fallback，不依赖真实 API key 或网络访问。
+
+保持不变：
+
+- `Local rule-based` 仍是默认 provider。
+- 不新增算法，不修改 `SimulationEngine`、`PrivacyFactory`、`AssignmentAlgorithmFactory` 或 `BatchExperiment`。
+- API key 只允许来自运行时环境变量，不写入源码、文档、测试、报告或提交历史。
 
 ---
 
@@ -849,10 +871,9 @@ out\package\GeoTaskShield-v0.9.0-windows-x64.zip
 
 ## 17. 建议下一步
 
-当前推荐先进入 `Phase 13: Agent Provider Hardening`，继续沿用 `IExperimentAssistant` 边界，不改变核心仿真、隐私机制、分配算法或批量实验语义：
+Phase 13 稳定后可继续考虑：
 
-1. 完善真实 LLM provider 的异步调用、超时控制、取消机制和用户可见错误提示，避免 `Agent Assistant` GUI 在真实请求期间阻塞；
-2. 保持 `Local rule-based` 为默认 provider，DashScope / OpenAI-compatible provider 继续只从环境变量读取配置，并在缺少密钥时 fail closed；
-3. 通过 fake HTTP transport 扩展核心测试，覆盖超时、错误响应、空内容、非预期 JSON 和 fallback 分析；
-4. 在 Phase 13 稳定后，再拆分当前较大的 `GeoTaskShield/tests/test_core.cpp`，或评估是否迁移到 GoogleTest/Catch2；
-5. 如后续需要论文级图表或复杂交互分析，再评估 Qt Graphs / Qt Charts；当前自绘柱状图足够支撑 `v0.9.0` 演示。
+1. 拆分当前较大的 `GeoTaskShield/tests/test_core.cpp`，或评估是否迁移到 GoogleTest/Catch2；
+2. 支持多轮实验助手上下文和更细粒度的实验参数建议；
+3. 扩展更多隐私保护机制和任务分配算法；
+4. 如后续需要论文级图表或复杂交互分析，再评估 Qt Graphs / Qt Charts；当前自绘柱状图足够支撑 `v0.9.0` 演示。

@@ -30,6 +30,15 @@ std::string writeTempCsv(const std::string& name, const std::string& content)
     return path.string();
 }
 
+void clearEnvValue(const char* name)
+{
+#ifdef _WIN32
+    _putenv_s(name, "");
+#else
+    unsetenv(name);
+#endif
+}
+
 std::filesystem::path repositoryRoot()
 {
     return std::filesystem::path(__FILE__).parent_path().parent_path().parent_path().parent_path();
@@ -145,11 +154,18 @@ int main(int argc, char** argv)
             "AgentAssistantWidget should expose an assistant provider selector.");
     require(assistantWidget->hasProviderOptionForTesting("Aliyun Bailian"),
             "AgentAssistantWidget should include an Aliyun Bailian provider option.");
+    require(assistantWidget->hasProviderStatusForTesting(),
+            "AgentAssistantWidget should expose visible provider status.");
     assistantWidget->setProviderForTesting("Local rule-based");
     assistantWidget->setPromptForTesting(
         "Compare privacy mechanisms for 1 workers and 1 tasks. Focus on "
         "completion rate, privacy utility, privacy loss, and fairness.");
     assistantWidget->analyzeForTesting();
+    require(!assistantWidget->isAnalyzingForTesting(),
+            "Local assistant analysis should finish synchronously.");
+    require(assistantWidget->providerStatusForTesting().contains(
+                "Local", Qt::CaseInsensitive),
+            "Local assistant analysis should leave visible provider status.");
     const QString intentPreview = assistantWidget->intentPreviewForTesting();
     require(intentPreview.contains("workers: 1"),
             "AgentAssistantWidget should preview parsed worker intent.");
@@ -174,6 +190,21 @@ int main(int argc, char** argv)
     require(exportedAssistantMarkdown.find(
                 "# GeoTaskShield Agent Assistant Analysis") != std::string::npos,
             "Exported assistant Markdown should contain the generated analysis.");
+
+    clearEnvValue("DASHSCOPE_API_KEY");
+    assistantWidget->setProviderForTesting("Aliyun Bailian");
+    assistantWidget->setPromptForTesting("Analyze current results with DashScope.");
+    assistantWidget->analyzeForTesting();
+    require(assistantWidget->waitForAnalysisForTesting(2000),
+            "DashScope analysis without an API key should finish promptly.");
+    require(!assistantWidget->isAnalyzingForTesting(),
+            "DashScope unavailable analysis should leave the widget idle.");
+    require(assistantWidget->providerStatusForTesting().contains(
+                "unavailable", Qt::CaseInsensitive),
+            "DashScope unavailable analysis should update provider status.");
+    require(assistantWidget->analysisMarkdownForTesting().contains(
+                "LLM Provider Unavailable"),
+            "DashScope unavailable analysis should preview fallback Markdown.");
 
     return 0;
 }
