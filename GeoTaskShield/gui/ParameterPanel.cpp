@@ -3,6 +3,7 @@
 #include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QFormLayout>
+#include <QLabel>
 #include <QPushButton>
 #include <QSpinBox>
 #include <QVBoxLayout>
@@ -54,9 +55,26 @@ ParameterPanel::ParameterPanel(QWidget* parent)
     algorithmCombo_->addItem("Hungarian", "hungarian");
     form->addRow("Algorithm", algorithmCombo_);
 
+    auto* legendTitle = new QLabel("Map legend", this);
+    legendTitle->setStyleSheet("font-weight: 600; margin-top: 8px;");
+
+    auto* legend = new QLabel(this);
+    legend->setTextFormat(Qt::RichText);
+    legend->setWordWrap(true);
+    legend->setText(
+        "<div style='line-height: 1.45;'>"
+        "<div><span style='color:#2563eb; font-size:18px;'>●</span> 蓝色点：真实 worker 位置</div>"
+        "<div><span style='color:#dc2626; font-size:18px;'>●</span> 红色点：task 位置</div>"
+        "<div><span style='color:#14b8a6; font-size:18px;'>○</span> 绿色圆圈：隐私保护后的暴露位置</div>"
+        "<div><span style='color:#64748b;'>- - -</span> 虚线：已分配的 worker-task 连线</div>"
+        "</div>");
+
     runButton_ = new QPushButton("Run Simulation", this);
 
     root->addLayout(form);
+    root->addSpacing(12);
+    root->addWidget(legendTitle);
+    root->addWidget(legend);
     root->addStretch();
     root->addWidget(runButton_);
     setMinimumWidth(240);
