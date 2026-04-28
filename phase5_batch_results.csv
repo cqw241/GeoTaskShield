@@ -1,0 +1,9 @@
+scenario,workers,tasks,grid_size,k,epsilon,privacy,algorithm,completed_tasks,total_tasks,completion_rate,average_moving_distance,total_reward,average_privacy_loss,algorithm_runtime_ms,user_load_stddev,fairness_index,privacy_utility_ratio,timeout_rate
+workers-50-grid-nearest,50,20,10,5,1,Grid Privacy,Nearest Greedy,20,20,1,9.51161,1154.38,3.93612,0.0372,0.632456,0.285714,0.202588,0
+workers-100-grid-nearest,100,50,10,5,1,Grid Privacy,Nearest Greedy,50,50,1,6.80494,2953.94,3.6469,0.045,0.685565,0.347222,0.215197,0
+epsilon-0.5-laplace-score,100,50,10,5,0.5,Laplace Noise Privacy,Score Greedy,50,50,1,6.54127,2953.94,3.29743,0.0592,0.655744,0.367647,0.232697,0
+epsilon-2.0-laplace-score,100,50,10,5,2,Laplace Noise Privacy,Score Greedy,50,50,1,5.42963,2953.94,0.824358,0.0586,0.574456,0.431034,0.548138,0
+k-3-hungarian,100,50,10,3,1,K-Anonymity Privacy,Hungarian,50,50,1,7.12448,2953.94,3.23446,3.3978,0.6245,0.390625,0.236158,0
+k-8-hungarian,100,50,10,8,1,K-Anonymity Privacy,Hungarian,50,50,1,7.0749,2953.94,4.38336,5.0767,0.591608,0.416667,0.185758,0
+grid-5-score,100,50,5,5,1,Grid Privacy,Score Greedy,50,50,1,5.69551,2953.94,1.89691,0.077,0.640312,0.378788,0.345196,0
+grid-20-score,100,50,20,5,1,Grid Privacy,Score Greedy,50,50,1,11.4098,2953.94,7.6627,0.0837,0.818535,0.271739,0.115437,0

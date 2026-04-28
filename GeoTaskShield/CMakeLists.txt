@@ -18,6 +18,8 @@ set(GEOTASKSHIELD_CORE_SOURCES
     "agent/RuleBasedConfigParser.cpp"
     "agent/ReportGenerator.cpp"
     "agent/ExperimentAgent.cpp"
+    "experiment/BatchExperiment.cpp"
+    "experiment/BatchExperimentExporter.cpp"
 )
 
 add_library(GeoTaskShieldCore STATIC ${GEOTASKSHIELD_CORE_SOURCES})
@@ -34,6 +36,10 @@ target_compile_features(GeoTaskShield PRIVATE cxx_std_20)
 add_executable(GeoTaskShieldAgentDemo "app/agent_demo/main.cpp")
 target_link_libraries(GeoTaskShieldAgentDemo PRIVATE GeoTaskShieldCore)
 target_compile_features(GeoTaskShieldAgentDemo PRIVATE cxx_std_20)
+
+add_executable(GeoTaskShieldBatchDemo "app/batch_demo/main.cpp")
+target_link_libraries(GeoTaskShieldBatchDemo PRIVATE GeoTaskShieldCore)
+target_compile_features(GeoTaskShieldBatchDemo PRIVATE cxx_std_20)
 
 if (BUILD_TESTING)
     add_executable(GeoTaskShieldTests "tests/test_core.cpp")

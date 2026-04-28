@@ -17,11 +17,14 @@
 #include "agent/ExperimentAgent.h"
 #include "agent/ReportGenerator.h"
 #include "agent/RuleBasedConfigParser.h"
+#include "experiment/BatchExperiment.h"
+#include "experiment/BatchExperimentExporter.h"
 
 #include <cmath>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -200,6 +203,33 @@ int main()
     require(metrics.algorithmRuntimeMs >= 0.0,
             "MetricsCalculator should carry algorithm runtime.");
 
+    std::vector<Worker> loadWorkers{
+        Worker{101, Location{0.0, 0.0}, Location{0.0, 0.0}, 3, 1.0, 1.0, 1.0},
+        Worker{102, Location{0.0, 0.0}, Location{0.0, 0.0}, 3, 1.0, 1.0, 1.0},
+        Worker{103, Location{0.0, 0.0}, Location{0.0, 0.0}, 3, 1.0, 1.0, 1.0}
+    };
+    std::vector<Task> loadTasks{
+        Task{1010, Location{3.0, 4.0}, 10.0, 4.0, 1, 1, TaskType::Traffic},
+        Task{1011, Location{0.0, 0.0}, 20.0, 1.0, 1, 1, TaskType::Noise},
+        Task{1012, Location{0.0, 0.0}, 30.0, 1.0, 1, 1, TaskType::AirQuality}
+    };
+    AssignmentResult loadAssignment;
+    loadAssignment.assignments = {
+        Assignment{1010, 101, 5.0, 0.0},
+        Assignment{1011, 101, 0.0, 0.0},
+        Assignment{1012, 102, 0.0, 0.0}
+    };
+    const EvaluationMetrics loadMetrics =
+        MetricsCalculator::calculate(loadTasks, loadWorkers, loadAssignment, 2.0);
+    require(near(loadMetrics.userLoadStdDev, std::sqrt(2.0 / 3.0)),
+            "MetricsCalculator should report worker load standard deviation.");
+    require(near(loadMetrics.fairnessIndex, 0.6),
+            "MetricsCalculator should report Jain fairness over worker loads.");
+    require(near(loadMetrics.privacyUtilityRatio, 1.0 / 3.0),
+            "MetricsCalculator should report completion per privacy loss.");
+    require(near(loadMetrics.timeoutRate, 1.0 / 3.0),
+            "MetricsCalculator should report assigned task timeout rate.");
+
     const std::string csv = CsvExporter::toCsv({
         ExperimentSummaryRow{"Grid Privacy", "Nearest Greedy", metrics}
     });
@@ -266,6 +296,40 @@ int main()
             "ExperimentAgent should run three rows for privacy comparison prompts.");
     require(contains(agentResult.markdown, "Hungarian"),
             "ExperimentAgent should include selected algorithm names in the report.");
+
+    BatchExperimentRunner batchRunner;
+    std::vector<ExperimentScenario> scenarios{
+        ExperimentScenario{"grid-small", SimulationConfig{}, "grid", "nearest"},
+        ExperimentScenario{"laplace-small", SimulationConfig{}, "laplace", "score"}
+    };
+    scenarios[0].config.workerCount = 8;
+    scenarios[0].config.taskCount = 3;
+    scenarios[0].config.randomSeed = 11;
+    scenarios[1].config.workerCount = 8;
+    scenarios[1].config.taskCount = 3;
+    scenarios[1].config.randomSeed = 11;
+    scenarios[1].config.privacy.epsilon = 0.5;
+    const BatchExperimentResult batchResult = batchRunner.run(scenarios);
+    require(batchResult.rows.size() == 2,
+            "BatchExperimentRunner should run one result row per scenario.");
+    require(batchResult.rows[0].scenarioName == "grid-small",
+            "BatchExperimentRunner should preserve scenario names.");
+    require(batchResult.rows[0].metrics.totalTasks == 3,
+            "BatchExperimentRunner should run scenarios through SimulationEngine.");
+
+    const std::string batchCsv = BatchExperimentExporter::toCsv(batchResult);
+    require(contains(batchCsv, "scenario,workers,tasks,grid_size,k,epsilon,privacy,algorithm"),
+            "BatchExperimentExporter should emit scenario configuration columns.");
+    require(contains(batchCsv, "grid-small,8,3"),
+            "BatchExperimentExporter should emit batch scenario rows.");
+    require(contains(batchCsv, "fairness_index"),
+            "BatchExperimentExporter should include expanded metrics.");
+
+    const std::string batchMarkdown = BatchExperimentExporter::toMarkdown(batchResult);
+    require(contains(batchMarkdown, "# GeoTaskShield Batch Experiment Report"),
+            "BatchExperimentExporter should emit a Markdown title.");
+    require(contains(batchMarkdown, "grid-small"),
+            "BatchExperimentExporter should emit scenario names in Markdown.");
 
     SimulationEngine engine(
         std::make_unique<GridPrivacy>(),
