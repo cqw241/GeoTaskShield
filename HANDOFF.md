@@ -2,8 +2,8 @@
 
 更新时间：2026-04-28
 项目路径：`D:\VS2026_Projects\GeoTaskShield`
-当前状态：阶段 1 至阶段 8 已完成并通过本地验收。阶段 8 将阶段 7 GUI 批量结果可视化固化为 `v0.7.0` 发布版。阶段 9 正在为 GUI 增加 Markdown 报告预览/导出入口和当前筛选 CSV 导出能力。当前发布版本：`v0.7.0`。
-当前开发分支：`feature/phase9-markdown-report-gui`
+当前状态：阶段 1 至阶段 10 已完成并通过本地验收。阶段 10 将阶段 9 GUI Markdown 报告预览/导出和当前筛选 CSV 导出能力固化为 `v0.8.0` 发布版。当前发布版本：`v0.8.0`。
+当前开发分支：`develop`
 
 ---
 
@@ -36,13 +36,15 @@ GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配
 
 | 分支 | 说明 |
 |---|---|
-| `main` | `v0.7.0` 发布分支，远端默认分支 |
-| `develop` | 已回合 `v0.7.0` 发布整理结果 |
+| `main` | `v0.8.0` 发布分支，远端默认分支 |
+| `develop` | 已回合 `v0.8.0` 发布整理结果 |
 | `feature/phase3-qt-gui` | 阶段 3 功能分支，提交 `3b66cbf feat(gui): add Qt Widgets simulation UI` |
 | `feature/phase4-ai-agent-report` | 阶段 4 功能分支 |
 | `feature/phase5-experiment-enhancements` | 阶段 5 功能分支，已合入 `develop` |
+| `feature/phase9-markdown-report-gui` | 阶段 9 功能分支，已合入 `develop` |
 | `release/phase6-engineering-release` | 阶段 6 发布准备分支 |
 | `release/v0.7.0` | 阶段 8 / `v0.7.0` 发布准备分支 |
+| `release/v0.8.0` | 阶段 10 / `v0.8.0` 发布准备分支 |
 
 后续 Git 操作要求：
 
@@ -413,7 +415,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package_windows.ps1
 默认输出：
 
 ```text
-out\package\GeoTaskShield-v0.7.0-windows-x64.zip
+out\package\GeoTaskShield-v0.8.0-windows-x64.zip
 ```
 
 打包输出位于 `out/`，属于生成产物，不提交进 Git。
@@ -671,11 +673,47 @@ docs/demo/v0.7.0-gui-demo-guide.md
 - Qt 类型仍只出现在 `gui` 模块，Markdown 报告字符串生成保持在 Qt-free `experiment` 模块。
 - 导出 CSV 反映当前 privacy/algorithm 筛选状态，不重新解释表格列头排序。
 
+### 阶段 10：Release and Demo Hardening
+
+目标：将阶段 9 的 GUI Markdown 报告预览/导出和当前筛选 CSV 导出能力固化为 `v0.8.0` 正式发布版，不继续新增 Qt Graphs、GoogleTest 迁移或在线 LLM 集成。
+
+已完成内容：
+
+1. 更新版本号：
+   - CMake project version：`0.8.0`；
+   - Windows 打包默认版本：`v0.8.0`。
+2. 更新 README：
+   - Current release 改为 `v0.8.0`；
+   - Batch Results 页补充 `Export Filtered CSV`、`Preview Markdown`、`Export Markdown` 流程；
+   - Release 包路径改为 `out/package/GeoTaskShield-v0.8.0-windows-x64.zip`。
+3. 新增 demo 指南：
+
+```text
+docs/demo/v0.8.0-gui-demo-guide.md
+```
+
+4. 更新 release 文档：
+   - `CHANGELOG.md` 增加 `v0.8.0`；
+   - `HANDOFF.md` 更新阶段 10、版本和后续方向。
+5. 更新 Windows 打包脚本：
+   - 默认输出 `GeoTaskShield-v0.8.0-windows-x64.zip`；
+   - release 包继续包含 `phase5_batch_results.csv`、`phase5_batch_report.md` 和 `docs/demo/` demo 指南。
+
+阶段 10 验收结果：
+
+- 非 Qt Debug 构建和核心测试通过；
+- Qt Debug 构建和 GUI smoke test 通过；
+- Qt Release 构建通过；
+- Windows ZIP 打包脚本通过；
+- `v0.8.0` 发布包生成于 `out\package\GeoTaskShield-v0.8.0-windows-x64.zip`；
+- 发布包包含 `docs/demo/v0.8.0-gui-demo-guide.md`；
+- 未新增 Qt Graphs，未迁移 GoogleTest，未接入在线 LLM。
+
 ---
 
 ## 11. 建议下一步
 
-Phase 9 之后可继续考虑：
+Phase 10 之后可继续考虑：
 
 1. 如后续需要复杂交互图表，再评估 Qt Graphs；
 2. 继续拆分核心测试，或评估引入 GoogleTest/Catch2。

@@ -2,8 +2,7 @@
 
 GeoTaskShield is a C++20/CMake simulator for privacy-preserving task allocation in mobile crowdsensing. It models workers and sensing tasks on a 2D map, applies location privacy mechanisms, runs task assignment algorithms, evaluates utility/privacy metrics, and presents results through console, CSV, Qt Widgets GUI, and a local experiment-report agent.
 
-Current release: `v0.7.0`. This release hardens the Phase 7 GUI batch-results visualization work.
-Current development: Phase 9 adds Markdown report preview/export and filtered CSV export entries to the GUI `Batch Results` tab.
+Current release: `v0.8.0`. This release hardens the Phase 9 GUI Markdown and filtered CSV export workflow.
 
 ## Current Status
 
@@ -17,6 +16,8 @@ Completed phases:
 - Phase 6: Engineering cleanup, release packaging, style rules, and `v0.6.0` release preparation.
 - Phase 7: GUI batch CSV result analysis and visualization, merged into `develop`.
 - Phase 8: Release and demo hardening for `v0.7.0`.
+- Phase 9: GUI Markdown report preview/export and filtered CSV export for Batch Results.
+- Phase 10: Release and demo hardening for `v0.8.0`.
 
 ## Features
 
@@ -183,7 +184,7 @@ Recommended screenshots for reports or demos:
 - `Simulation` tab after running a simulation, showing parameter controls, map canvas, metrics, and logs.
 - `Batch Results` tab after loading `phase5_batch_results.csv`, showing filters, summary cards, the bar chart, selected-row details, and the sortable table.
 
-See [docs/demo/v0.7.0-gui-demo-guide.md](docs/demo/v0.7.0-gui-demo-guide.md) for a step-by-step demo script and screenshot checklist.
+See [docs/demo/v0.8.0-gui-demo-guide.md](docs/demo/v0.8.0-gui-demo-guide.md) for the v0.8.0 export-focused demo script and screenshot checklist.
 
 ### Release Build and Package
 
@@ -202,7 +203,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package_windows.ps1
 The package is generated under:
 
 ```text
-out/package/GeoTaskShield-v0.7.0-windows-x64.zip
+out/package/GeoTaskShield-v0.8.0-windows-x64.zip
 ```
 
 The package includes the demo CSV `phase5_batch_results.csv` and the GUI demo guide under `docs/demo/`.
@@ -256,6 +257,7 @@ Release branches use `release/*`. Recent release branches:
 ```text
 release/phase6-engineering-release
 release/v0.7.0
+release/v0.8.0
 ```
 
 Recent release tags:
@@ -263,6 +265,7 @@ Recent release tags:
 ```text
 v0.6.0
 v0.7.0
+v0.8.0
 ```
 
 ## Code Style
