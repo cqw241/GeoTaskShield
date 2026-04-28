@@ -2,8 +2,8 @@
 
 更新时间：2026-04-28
 项目路径：`D:\VS2026_Projects\GeoTaskShield`
-当前状态：阶段 1 至阶段 12 已完成并通过本地验收。Demo Readiness 正在 `release/v0.9.0` 上固化为 `v0.9.0` 发布包，不新增功能。
-当前开发分支：`release/v0.9.0`
+当前状态：阶段 1 至阶段 12 已完成并通过本地验收，Demo Readiness 已固化为 `v0.9.0` 发布包。当前本地基线已从 `main` 快进同步到 `develop`，后续新功能应从 `develop` 创建 `feature/*` 分支。
+当前开发分支：`develop`
 
 ---
 
@@ -38,8 +38,8 @@ GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配
 
 | 分支 | 说明 |
 |---|---|
-| `main` | `v0.8.0` 发布分支，远端默认分支 |
-| `develop` | 已回合 Phase 12 可选 LLM provider 结果 |
+| `main` | `v0.9.0` 发布基线，远端默认分支；包含发布后的 README 补充和 Simulation map legend |
+| `develop` | 本地已快进同步到 `main`，作为下一阶段 `feature/*` 起点 |
 | `feature/phase3-qt-gui` | 阶段 3 功能分支，提交 `3b66cbf feat(gui): add Qt Widgets simulation UI` |
 | `feature/phase4-ai-agent-report` | 阶段 4 功能分支 |
 | `feature/phase5-experiment-enhancements` | 阶段 5 功能分支，已合入 `develop` |
@@ -49,7 +49,7 @@ GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配
 | `release/phase6-engineering-release` | 阶段 6 发布准备分支 |
 | `release/v0.7.0` | 阶段 8 / `v0.7.0` 发布准备分支 |
 | `release/v0.8.0` | 阶段 10 / `v0.8.0` 发布准备分支 |
-| `release/v0.9.0` | Demo Readiness / `v0.9.0` 发布准备分支 |
+| `release/v0.9.0` | Demo Readiness / `v0.9.0` 发布准备分支，已完成 |
 
 后续 Git 操作要求：
 
@@ -849,8 +849,10 @@ out\package\GeoTaskShield-v0.9.0-windows-x64.zip
 
 ## 17. 建议下一步
 
-Phase 12 之后可继续考虑：
+当前推荐先进入 `Phase 13: Agent Provider Hardening`，继续沿用 `IExperimentAssistant` 边界，不改变核心仿真、隐私机制、分配算法或批量实验语义：
 
-1. 完善真实 LLM provider 的异步调用、超时控制和用户可见错误提示；
-2. 如后续需要复杂交互图表，再评估 Qt Graphs；
-3. 继续拆分核心测试，或评估引入 GoogleTest/Catch2。
+1. 完善真实 LLM provider 的异步调用、超时控制、取消机制和用户可见错误提示，避免 `Agent Assistant` GUI 在真实请求期间阻塞；
+2. 保持 `Local rule-based` 为默认 provider，DashScope / OpenAI-compatible provider 继续只从环境变量读取配置，并在缺少密钥时 fail closed；
+3. 通过 fake HTTP transport 扩展核心测试，覆盖超时、错误响应、空内容、非预期 JSON 和 fallback 分析；
+4. 在 Phase 13 稳定后，再拆分当前较大的 `GeoTaskShield/tests/test_core.cpp`，或评估是否迁移到 GoogleTest/Catch2；
+5. 如后续需要论文级图表或复杂交互分析，再评估 Qt Graphs / Qt Charts；当前自绘柱状图足够支撑 `v0.9.0` 演示。
