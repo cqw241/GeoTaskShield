@@ -2,14 +2,14 @@
 
 更新时间：2026-04-28
 项目路径：`D:\VS2026_Projects\GeoTaskShield`
-当前状态：阶段 1 至阶段 10 已完成并通过本地验收。阶段 10 将阶段 9 GUI Markdown 报告预览/导出和当前筛选 CSV 导出能力固化为 `v0.8.0` 发布版。当前发布版本：`v0.8.0`。
-当前开发分支：`develop`
+当前状态：阶段 1 至阶段 10 已完成并通过本地验收。阶段 11 在 `feature/phase11-intelligent-assistant` 上实现离线智能实验助手能力，当前发布版本仍为 `v0.8.0`。
+当前开发分支：`feature/phase11-intelligent-assistant`
 
 ---
 
 ## 1. 项目概述
 
-GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配仿真系统。当前版本使用 C++20/CMake 实现核心仿真、控制台实验、批量实验、Qt Widgets GUI 可视化，以及本地规则型 AIAgent 实验报告生成能力。
+GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配仿真系统。当前版本使用 C++20/CMake 实现核心仿真、控制台实验、批量实验、Qt Widgets GUI 可视化、本地规则型 AIAgent 实验报告生成能力，以及离线智能实验助手能力。
 
 系统当前支持：
 
@@ -23,7 +23,9 @@ GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配
 - 通过 Qt Widgets GUI 的 `Batch Results` 页加载批量实验 CSV、筛选、排序、查看摘要卡片和单指标柱状图；
 - 通过 Qt Widgets GUI 的 `Batch Results` 页导出当前筛选后的 CSV 结果；
 - 通过 Qt Widgets GUI 的 `Batch Results` 页基于当前筛选结果预览或导出 Markdown 报告；
+- 通过 Qt Widgets GUI 的 `Agent Assistant` 页输入自然语言请求，预览结构化实验意图，并基于当前 Batch Results 筛选结果生成或导出 Markdown 分析；
 - 通过本地规则型 AIAgent 解析自然语言实验请求并生成 Markdown 报告；
+- 通过 Qt-free `IExperimentAssistant` 抽象提供本地规则型分析助手和确定性 Mock LLM 助手；
 - 一键运行批量实验并导出 CSV/Markdown 报告。
 
 ---
@@ -42,6 +44,7 @@ GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配
 | `feature/phase4-ai-agent-report` | 阶段 4 功能分支 |
 | `feature/phase5-experiment-enhancements` | 阶段 5 功能分支，已合入 `develop` |
 | `feature/phase9-markdown-report-gui` | 阶段 9 功能分支，已合入 `develop` |
+| `feature/phase11-intelligent-assistant` | 阶段 11 智能实验助手功能分支 |
 | `release/phase6-engineering-release` | 阶段 6 发布准备分支 |
 | `release/v0.7.0` | 阶段 8 / `v0.7.0` 发布准备分支 |
 | `release/v0.8.0` | 阶段 10 / `v0.8.0` 发布准备分支 |
@@ -576,11 +579,91 @@ docs/demo/v0.8.0-gui-demo-guide.md
 
 ---
 
-## 14. 构建与验收方式
+## 14. 阶段 11：Intelligent Experiment Assistant
+
+目标：在不接入真实在线 LLM、不保存 API key、不改变核心仿真语义的前提下，为 GeoTaskShield 增加离线智能实验助手能力。第一版重点是 Agent 架构扩展、本地智能分析和 GUI 自然语言入口。
+
+已完成内容：
+
+- 新增 Qt-free assistant 抽象和实现：
+
+```text
+GeoTaskShield/agent/
+  AssistantRequest.h
+  AssistantResponse.h
+  ExperimentIntent.h
+  IExperimentAssistant.h
+  RuleBasedAssistant.h/.cpp
+  MockLLMAssistant.h/.cpp
+```
+
+- `RuleBasedAssistant` 支持解析：
+  - worker 数量；
+  - task 数量；
+  - privacy 机制；
+  - assignment algorithm；
+  - metric 名称；
+  - compare intent。
+- `RuleBasedAssistant` 可基于当前 Batch Results 筛选记录生成 Markdown 分析，包括：
+  - best `completionRate`；
+  - best `privacyUtilityRatio`；
+  - lowest `averagePrivacyLoss`；
+  - best `fairnessIndex`；
+  - 后续实验建议。
+- `MockLLMAssistant` 作为确定性本地 mock，实现 `IExperimentAssistant`，用于验证未来 LLM 接入边界，不读取 API key、不访问网络。
+- 新增 Qt Widgets 页面：
+
+```text
+GeoTaskShield/gui/
+  AgentAssistantWidget.h/.cpp
+```
+
+- `MainWindow` 新增第三个 tab：
+  - `Simulation`
+  - `Batch Results`
+  - `Agent Assistant`
+- `Agent Assistant` tab 支持：
+  - 自然语言输入；
+  - `Analyze`；
+  - parsed intent preview；
+  - Markdown analysis preview；
+  - `Export Markdown`。
+- `BatchResultsWidget` 新增只读方法暴露当前筛选记录，供助手分析使用；不解析表格文本，不重新运行实验。
+- 核心测试和 GUI smoke test 覆盖：
+  - assistant intent parsing；
+  - 四个关键指标分析；
+  - 空数据提示；
+  - deterministic mock assistant；
+  - `Agent Assistant` tab 存在；
+  - GUI 输入 prompt 后可生成 intent 和 Markdown；
+  - Markdown 导出。
+
+设计约束：
+
+- 不调用真实在线 LLM；
+- 不引入 API key；
+- 不引入网络依赖；
+- 不修改 `SimulationEngine`、`PrivacyFactory`、`AssignmentAlgorithmFactory`、`BatchExperiment` 语义；
+- 不新增算法；
+- 不引入 Qt Graphs 或 Qt Charts；
+- 不迁移 GoogleTest/Catch2；
+- Qt 类型仍只出现在 `gui` 模块。
+
+阶段 11 验收结果：
+
+- 非 Qt Debug 构建和核心测试通过；
+- Qt Debug 构建和 GUI smoke test 通过；
+- `Agent Assistant` tab 存在；
+- 输入示例 prompt 后可以生成结构化 intent 和 Markdown 分析；
+- 无 API key、无网络依赖。
+
+---
+
+## 15. 构建与验收方式
 
 推荐在 Visual Studio Developer Command Prompt 或通过 `VsDevCmd.bat` 加载 MSVC 环境后执行。
 
-### 14.1 非 Qt 构建、测试、控制台实验
+### 15.1 非 Qt 构建、测试、控制台实验
 
 ```powershell
 cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 && cmake --preset x64-debug && cmake --build out\build\x64-debug && ctest --test-dir out\build\x64-debug --output-on-failure && out\build\x64-debug\GeoTaskShield\GeoTaskShield.exe'
@@ -593,7 +676,7 @@ cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Too
 100% tests passed, 0 tests failed out of 1
 ```
 
-### 14.2 Agent demo
+### 15.2 Agent demo
 
 ```powershell
 out\build\x64-debug\GeoTaskShield\GeoTaskShieldAgentDemo.exe
@@ -607,7 +690,7 @@ out\build\x64-debug\GeoTaskShield\GeoTaskShieldAgentDemo.exe
 out\build\x64-debug\GeoTaskShield\GeoTaskShieldAgentDemo.exe "对比三种隐私机制，30个用户，10个任务，使用匈牙利算法"
 ```
 
-### 14.3 Batch demo
+### 15.3 Batch demo
 
 ```powershell
 out\build\x64-debug\GeoTaskShield\GeoTaskShieldBatchDemo.exe
@@ -620,7 +703,7 @@ phase5_batch_results.csv
 phase5_batch_report.md
 ```
 
-### 14.4 Qt GUI 构建与测试
+### 15.4 Qt GUI 构建与测试
 
 ```powershell
 cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 && cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt && ctest --test-dir out\build\x64-debug-qt --output-on-failure'
@@ -644,7 +727,7 @@ Qt 相关注意：
 - 如果换机器，需要修改 `CMAKE_PREFIX_PATH`；
 - 构建时可能提示 `Could NOT find WrapVulkanHeaders`，当前 Widgets GUI 不依赖 Vulkan，已验证不影响构建和测试。
 
-### 14.5 Release 构建与 Windows 打包
+### 15.5 Release 构建与 Windows 打包
 
 Release Qt 构建：
 
@@ -668,7 +751,7 @@ out\package\GeoTaskShield-v0.8.0-windows-x64.zip
 
 ---
 
-## 15. 当前设计约束与注意事项
+## 16. 当前设计约束与注意事项
 
 1. 核心算法层保持 Qt 无关。
    - `model`、`simulation`、`privacy`、`assignment`、`evaluation`、`data`、`agent` 均为纯 C++。
@@ -707,9 +790,10 @@ out\package\GeoTaskShield-v0.8.0-windows-x64.zip
 
 ---
 
-## 16. 建议下一步
+## 17. 建议下一步
 
-Phase 10 之后可继续考虑：
+Phase 11 之后可继续考虑：
 
-1. 如后续需要复杂交互图表，再评估 Qt Graphs；
-2. 继续拆分核心测试，或评估引入 GoogleTest/Catch2。
+1. 如需真实在线 LLM 接入，新增独立 spec，并通过运行时环境变量读取密钥，默认关闭；
+2. 如后续需要复杂交互图表，再评估 Qt Graphs；
+3. 继续拆分核心测试，或评估引入 GoogleTest/Catch2。

@@ -18,6 +18,8 @@ set(GEOTASKSHIELD_CORE_SOURCES
     "agent/RuleBasedConfigParser.cpp"
     "agent/ReportGenerator.cpp"
     "agent/ExperimentAgent.cpp"
+    "agent/RuleBasedAssistant.cpp"
+    "agent/MockLLMAssistant.cpp"
     "experiment/BatchExperiment.cpp"
     "experiment/BatchExperimentExporter.cpp"
     "experiment/BatchResultCsvLoader.cpp"
@@ -83,6 +85,7 @@ if (GEOTASKSHIELD_BUILD_GUI)
         HINTS "${GEOTASKSHIELD_QT_PREFIX}/bin")
 
     set(GEOTASKSHIELD_GUI_SOURCES
+        "gui/AgentAssistantWidget.cpp"
         "gui/BatchResultsWidget.cpp"
         "gui/MainWindow.cpp"
         "gui/MapCanvas.cpp"

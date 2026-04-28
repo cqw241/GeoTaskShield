@@ -1,6 +1,14 @@
 # Findings & Decisions
 
 ## Requirements
+- Enter GeoTaskShield Phase 11: Intelligent Experiment Assistant.
+- Work from `develop` on `feature/phase11-intelligent-assistant`.
+- Add an offline `Agent Assistant` GUI tab with natural-language input, Analyze, parsed intent preview, Markdown preview, and optional Markdown export.
+- Add Qt-free assistant abstractions: `AssistantRequest`, `AssistantResponse`, `ExperimentIntent`, `IExperimentAssistant`, `RuleBasedAssistant`, and `MockLLMAssistant`.
+- Parse workers, tasks, privacy, algorithm, metrics, and compare intent locally.
+- Analyze current Batch Results CSV/filtered rows and generate Markdown conclusions for best `completionRate`, best `privacyUtilityRatio`, lowest `averagePrivacyLoss`, and best `fairnessIndex`.
+- Provide local next-experiment suggestions.
+- Do not connect to real online LLMs, store API keys, introduce network dependencies, change `SimulationEngine`, `PrivacyFactory`, `AssignmentAlgorithmFactory`, or `BatchExperiment` semantics, add Qt Graphs, migrate GoogleTest, or add algorithms.
 - Enter GeoTaskShield Phase 8: release and demo hardening for `v0.7.0`.
 - Phase 8 must freeze feature scope and avoid Markdown preview, filtered export, Qt Graphs, and online LLM work.
 - Release package must include `phase5_batch_results.csv` or equivalent demo data.
@@ -30,6 +38,12 @@
 - Preserve the Phase 1 console MVP and make Phase 2 verifiable.
 
 ## Research Findings
+- Current branch for implementation is `feature/phase11-intelligent-assistant`.
+- Phase 11 spec is `docs/superpowers/specs/2026-04-28-phase11-intelligent-experiment-assistant-design.md`.
+- Current release documentation says `v0.8.0` already includes Batch Results Markdown preview/export and filtered CSV export.
+- Existing `agent` module has `ExperimentRequest`, `RuleBasedConfigParser`, `ExperimentReport`, `ReportGenerator`, and `ExperimentAgent`.
+- Existing `experiment` module has `BatchResultRecord`, `BatchResultCsvLoader`, and `BatchResultModel` with filter, summary, chart, Markdown, and CSV report support.
+- Existing `gui` module has `BatchResultsWidget` and `MainWindow` with `Simulation` and `Batch Results` tabs.
 - Current source root is `D:\VS2026_Projects\GeoTaskShield\GeoTaskShield`.
 - Current core modules:
   - `model`: `Location`, `Task`, `Worker`, `Assignment`, `ExperimentConfig`
@@ -52,6 +66,10 @@
 ## Technical Decisions
 | Decision | Rationale |
 |----------|-----------|
+| Phase 11 adds assistant classes under `agent` | Assistant behavior is natural-language parsing and analysis, and must remain Qt-free. |
+| Phase 11 GUI reads filtered records through `BatchResultsWidget` | The existing widget already owns current CSV/filter state; exposing records avoids scraping table text. |
+| Phase 11 will use TDD against the existing lightweight test executables | The project has not migrated to GoogleTest and the user explicitly asked not to migrate it. |
+| Phase 11 default assistant is `RuleBasedAssistant` | The phase is offline-first and must not call real online LLMs. |
 | Stage 2 will keep `SimulationEngine` strategy-based | Existing design already accepts privacy and assignment strategy objects. |
 | Implement factories after concrete algorithms | Factory tests are clearer once there are multiple concrete strategies. |
 | CSV export is a separate `data` module | Export should not pollute algorithm, simulation, or GUI layers. |

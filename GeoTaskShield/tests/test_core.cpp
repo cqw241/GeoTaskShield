@@ -17,6 +17,8 @@
 #include "agent/ExperimentAgent.h"
 #include "agent/ReportGenerator.h"
 #include "agent/RuleBasedConfigParser.h"
+#include "agent/MockLLMAssistant.h"
+#include "agent/RuleBasedAssistant.h"
 #include "experiment/BatchExperiment.h"
 #include "experiment/BatchExperimentExporter.h"
 #include "experiment/BatchResultCsvLoader.h"
@@ -24,8 +26,10 @@
 #include "experiment/BatchResultRecord.h"
 
 #include <cmath>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -36,7 +40,8 @@ namespace {
 void require(bool condition, const std::string& message)
 {
     if (!condition) {
-        throw std::runtime_error(message);
+        std::cerr << "Test failed: " << message << '\n';
+        std::exit(1);
     }
 }
 
@@ -310,6 +315,98 @@ int main()
             "ExperimentAgent should run three rows for privacy comparison prompts.");
     require(contains(agentResult.markdown, "Hungarian"),
             "ExperimentAgent should include selected algorithm names in the report.");
+
+    RuleBasedAssistant assistant;
+    AssistantRequest assistantRequest;
+    assistantRequest.prompt =
+        "Compare grid and laplace for 100 workers, 50 tasks. Use hungarian and "
+        "score greedy. Focus on completion rate, privacy utility, privacy loss, "
+        "and fairness.";
+    assistantRequest.sourceLabel = "test filtered rows";
+    assistantRequest.batchResults = {
+        BatchResultRecord{"completion-best", 100, 50, 10.0, 3, 1.0, "Grid Privacy",
+                          "Hungarian", 49, 50, 0.98, 12.0, 200.0, 3.0, 0.8, 0.4,
+                          0.72, 0.245, 0.02},
+        BatchResultRecord{"utility-best", 100, 50, 10.0, 3, 0.5,
+                          "Laplace Noise Privacy", "Score Greedy", 45, 50, 0.90,
+                          9.0, 180.0, 0.5, 0.5, 0.2, 0.93, 0.60, 0.01},
+        BatchResultRecord{"privacy-best", 100, 50, 10.0, 3, 1.0,
+                          "K-Anonymity Privacy", "Nearest Greedy", 40, 50, 0.80,
+                          7.0, 150.0, 0.2, 0.4, 0.1, 0.88, 0.30, 0.03}
+    };
+    const AssistantResponse assistantResponse = assistant.analyze(assistantRequest);
+    require(assistantResponse.success,
+            "RuleBasedAssistant should return a successful local analysis.");
+    require(assistantResponse.intent.workerCount.has_value() &&
+                assistantResponse.intent.workerCount.value() == 100,
+            "RuleBasedAssistant should parse worker counts.");
+    require(assistantResponse.intent.taskCount.has_value() &&
+                assistantResponse.intent.taskCount.value() == 50,
+            "RuleBasedAssistant should parse task counts.");
+    require(assistantResponse.intent.compareRequested,
+            "RuleBasedAssistant should detect comparison intent.");
+    require(assistantResponse.intent.privacyTypes.size() == 2,
+            "RuleBasedAssistant should parse requested privacy mechanisms.");
+    require(assistantResponse.intent.algorithmTypes.size() == 2,
+            "RuleBasedAssistant should parse requested assignment algorithms.");
+    require(assistantResponse.intent.metricNames.size() >= 4,
+            "RuleBasedAssistant should parse metric terms.");
+    require(contains(assistantResponse.intentPreviewMarkdown, "workers: 100"),
+            "RuleBasedAssistant should generate a structured intent preview.");
+    require(contains(assistantResponse.analysisMarkdown,
+                     "# GeoTaskShield Agent Assistant Analysis"),
+            "RuleBasedAssistant should emit a Markdown analysis title.");
+    require(contains(assistantResponse.analysisMarkdown, "Best completion rate") &&
+                contains(assistantResponse.analysisMarkdown, "completion-best"),
+            "RuleBasedAssistant should report the best completionRate row.");
+    require(contains(assistantResponse.analysisMarkdown,
+                     "Best privacy-utility ratio") &&
+                contains(assistantResponse.analysisMarkdown, "utility-best"),
+            "RuleBasedAssistant should report the best privacyUtilityRatio row.");
+    require(contains(assistantResponse.analysisMarkdown,
+                     "Lowest average privacy loss") &&
+                contains(assistantResponse.analysisMarkdown, "privacy-best"),
+            "RuleBasedAssistant should report the lowest averagePrivacyLoss row.");
+    require(contains(assistantResponse.analysisMarkdown, "Best fairness index") &&
+                contains(assistantResponse.analysisMarkdown, "utility-best"),
+            "RuleBasedAssistant should report the best fairnessIndex row.");
+    require(contains(assistantResponse.analysisMarkdown,
+                     "Next Experiment Suggestions"),
+            "RuleBasedAssistant should provide next-experiment suggestions.");
+
+    AssistantRequest chineseMetricRequest;
+    chineseMetricRequest.prompt =
+        "比较隐私机制，关注完成率、隐私效用比、隐私损失和公平性";
+    chineseMetricRequest.batchResults = {
+        BatchResultRecord{"same-privacy-a", 10, 5, 10.0, 3, 1.0, "Grid Privacy",
+                          "Nearest Greedy", 4, 5, 0.8, 2.0, 20.0, 1.0, 0.1, 0.2,
+                          0.7, 0.4, 0.0},
+        BatchResultRecord{"same-privacy-b", 10, 5, 10.0, 3, 1.0, "Grid Privacy",
+                          "Hungarian", 5, 5, 1.0, 3.0, 25.0, 2.0, 0.2, 0.3,
+                          0.8, 0.33, 0.0}
+    };
+    const AssistantResponse chineseMetricResponse =
+        assistant.analyze(chineseMetricRequest);
+    require(chineseMetricResponse.intent.metricNames.size() >= 4,
+            "RuleBasedAssistant should parse Chinese metric terms.");
+    require(contains(chineseMetricResponse.analysisMarkdown,
+                     "Clear filters or load a broader CSV"),
+            "RuleBasedAssistant should suggest broader data when privacy comparison has one privacy type.");
+
+    AssistantRequest emptyAssistantRequest;
+    emptyAssistantRequest.prompt = "Analyze completion and privacy loss";
+    const AssistantResponse emptyAssistantResponse =
+        assistant.analyze(emptyAssistantRequest);
+    require(contains(emptyAssistantResponse.analysisMarkdown,
+                     "no batch rows are available"),
+            "RuleBasedAssistant should explain when no batch rows are available.");
+
+    MockLLMAssistant mockAssistant;
+    const AssistantResponse mockResponse = mockAssistant.analyze(assistantRequest);
+    require(mockResponse.success,
+            "MockLLMAssistant should return a deterministic local response.");
+    require(contains(mockResponse.analysisMarkdown, "Mock LLM Assistant"),
+            "MockLLMAssistant output should be clearly labeled as local mock output.");
 
     BatchExperimentRunner batchRunner;
     std::vector<ExperimentScenario> scenarios{

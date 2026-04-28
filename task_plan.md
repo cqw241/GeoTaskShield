@@ -1,10 +1,21 @@
-# Task Plan: GeoTaskShield Phase 8 - v0.7.0 Release Hardening
+# Task Plan: GeoTaskShield Phase 11 - Intelligent Experiment Assistant
 
 ## Goal
-Harden Phase 7 into a verified `v0.7.0` release package with updated documentation, demo guidance, package contents, and Git Flow publishing.
+Implement Phase 11 as an offline intelligent experiment assistant with a Qt-free assistant abstraction, local rule-based analysis over current Batch Results rows, and a Qt Widgets `Agent Assistant` tab.
 
 ## Current Phase
-Phase 8 complete; Phase 9 deferred
+Phase 11 complete on `feature/phase11-intelligent-assistant`; ready for review/merge
+
+## Phase 11 Success Criteria
+- Work happens on `feature/phase11-intelligent-assistant`.
+- Add an `Agent Assistant` GUI tab with natural-language input, Analyze action, parsed intent preview, Markdown analysis preview, and Markdown export.
+- Add Qt-free assistant types under `GeoTaskShield/agent`: `AssistantRequest`, `AssistantResponse`, `ExperimentIntent`, `IExperimentAssistant`, `RuleBasedAssistant`, and `MockLLMAssistant`.
+- Parse workers, tasks, privacy, algorithm, metric, and compare intent locally.
+- Analyze current Batch Results CSV/filtered rows without rerunning experiments.
+- Markdown conclusions include best `completionRate`, best `privacyUtilityRatio`, lowest `averagePrivacyLoss`, and best `fairnessIndex`.
+- Provide local next-experiment suggestions.
+- Do not connect to real online LLMs, store API keys, introduce network dependencies, modify `SimulationEngine`, `PrivacyFactory`, `AssignmentAlgorithmFactory`, or `BatchExperiment` semantics, add Qt Graphs, migrate GoogleTest, or add algorithms.
+- Non-Qt core tests and Qt GUI smoke tests pass.
 
 ## Phase 8 Success Criteria
 - Work happens on `release/v0.7.0`.
@@ -278,6 +289,38 @@ Phase 8 complete; Phase 9 deferred
 - [x] Publish `v0.7.0`
 - **Status:** complete
 
+### Phase 31: Phase 11 Planning and Red Tests
+- [x] Create `feature/phase11-intelligent-assistant` from `develop`
+- [x] Write Phase 11 design spec
+- [x] Update planning files for Phase 11
+- [x] Add failing non-Qt assistant tests
+- [x] Add failing Qt GUI smoke expectations for `Agent Assistant`
+- **Status:** complete
+
+### Phase 32: Qt-Free Assistant Core
+- [x] Add assistant request/response/intent/interface headers
+- [x] Implement `RuleBasedAssistant`
+- [x] Implement deterministic local `MockLLMAssistant`
+- [x] Wire assistant sources into `GeoTaskShieldCore`
+- [x] Run non-Qt tests
+- **Status:** complete
+
+### Phase 33: Agent Assistant GUI
+- [x] Add `AgentAssistantWidget`
+- [x] Expose current filtered Batch Results rows from `BatchResultsWidget`
+- [x] Integrate `Agent Assistant` tab into `MainWindow`
+- [x] Add smoke-test helpers for assistant analysis/export
+- [x] Run Qt GUI smoke tests
+- **Status:** complete
+
+### Phase 34: Verification and Documentation
+- [x] Run full non-Qt Debug verification
+- [x] Run full Qt Debug verification
+- [x] Run diff check and secret/API-key scan
+- [x] Update README/HANDOFF if implementation changes user-facing workflow
+- [x] Update planning files with final status
+- **Status:** complete
+
 ## Key Questions
 1. Should Hungarian matching support tasks requiring multiple workers in Phase 2?
    - Decision: no. Phase 2 implements one-worker-per-task matching and leaves multi-worker assignment for a later extension.
@@ -298,6 +341,9 @@ Phase 8 complete; Phase 9 deferred
 | Phase 7 stores CSV analysis in `experiment` rather than `gui` | The data/model layer is Qt-free and belongs in the non-Qt core build; only widgets live in `gui`. |
 | Phase 7 uses custom chart painting, not Qt Charts | Qt Charts is deprecated in Qt 6.11 and this phase only needs a single-metric bar chart. |
 | Phase 8 freezes features for release hardening | The user explicitly deferred report preview, filtered export, Qt Graphs, and online LLM work to Phase 9. |
+| Phase 11 stays offline and Qt-free outside GUI | The user explicitly requires no real LLM, no API keys, no network dependency, and Qt types only in `gui`. |
+| Phase 11 analyzes current Batch Results rows | This reuses the existing CSV/filter pipeline and avoids changing simulation or batch experiment semantics. |
+| `MockLLMAssistant` is deterministic and local | It proves the interface boundary without introducing online model behavior. |
 
 ## Errors Encountered
 | Error | Attempt | Resolution |
@@ -310,6 +356,9 @@ Phase 8 complete; Phase 9 deferred
 | Missing `experiment/BatchExperiment.h` during Phase 5 red build | 1 | Implemented the batch experiment module and exporter after confirming the expected failure. |
 | PowerShell `Select-Object -Index 32..42` treated the range as a string | 1 | Re-ran with a `$lines[32..42]` array slice. |
 | MSVC warned that `/W4` overrides default `/W3` | 1 | Removed default `/W*` CMake flags before applying project warning options. |
+| Missing `agent/MockLLMAssistant.h` during Phase 11 red build | 1 | Expected red test; implement Qt-free assistant headers and sources next. |
+| Non-Qt Phase 11 green verification timed out after 124 seconds | 1 | Retry with a longer timeout before changing code. |
+| Non-Qt Phase 11 green verification opened a Debug Runtime dialog | 2 | Killed the stale test process and fixed the assistant test fixture before rerunning. |
 
 ## Notes
 - Existing build verification uses Visual Studio DevCmd because the normal PowerShell PATH does not expose `cl.exe`/`ninja`.

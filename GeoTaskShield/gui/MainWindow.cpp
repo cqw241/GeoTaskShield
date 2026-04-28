@@ -1,6 +1,7 @@
 #include "gui/MainWindow.h"
 
 #include "assignment/AssignmentAlgorithmFactory.h"
+#include "gui/AgentAssistantWidget.h"
 #include "gui/BatchResultsWidget.h"
 #include "gui/LogPanel.h"
 #include "gui/MapCanvas.h"
@@ -51,6 +52,11 @@ MainWindow::MainWindow(QWidget* parent)
     tabs->addTab(simulationPage, "Simulation");
     batchResultsWidget_ = new BatchResultsWidget(tabs);
     tabs->addTab(batchResultsWidget_, "Batch Results");
+    agentAssistantWidget_ = new AgentAssistantWidget(tabs);
+    agentAssistantWidget_->setBatchResultsProvider([this]() {
+        return batchResultsWidget_->currentFilteredRecords();
+    });
+    tabs->addTab(agentAssistantWidget_, "Agent Assistant");
 
     root->addWidget(tabs, 1);
     setCentralWidget(central);

@@ -1,10 +1,13 @@
+#include "gui/AgentAssistantWidget.h"
 #include "gui/BatchResultsWidget.h"
 #include "gui/MainWindow.h"
 
 #include <QApplication>
 
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 
@@ -13,7 +16,8 @@ namespace {
 void require(bool condition, const std::string& message)
 {
     if (!condition) {
-        throw std::runtime_error(message);
+        std::cerr << "Test failed: " << message << '\n';
+        std::exit(1);
     }
 }
 
@@ -102,6 +106,40 @@ int main(int argc, char** argv)
     require(exportedCsv.find("scenario,workers,tasks,grid_size,k,epsilon") !=
                 std::string::npos,
             "Exported filtered CSV should contain the batch CSV header.");
+
+    auto* assistantWidget = window.findChild<gts::AgentAssistantWidget*>();
+    require(assistantWidget != nullptr,
+            "MainWindow should expose an Agent Assistant tab.");
+    require(assistantWidget->hasAssistantControlsForTesting(),
+            "AgentAssistantWidget should expose input, analyze, preview, and export controls.");
+    assistantWidget->setPromptForTesting(
+        "Compare privacy mechanisms for 1 workers and 1 tasks. Focus on "
+        "completion rate, privacy utility, privacy loss, and fairness.");
+    assistantWidget->analyzeForTesting();
+    const QString intentPreview = assistantWidget->intentPreviewForTesting();
+    require(intentPreview.contains("workers: 1"),
+            "AgentAssistantWidget should preview parsed worker intent.");
+    const QString assistantMarkdown = assistantWidget->analysisMarkdownForTesting();
+    require(assistantMarkdown.contains("# GeoTaskShield Agent Assistant Analysis"),
+            "AgentAssistantWidget should preview assistant Markdown analysis.");
+    require(assistantMarkdown.contains("Best completion rate") &&
+                assistantMarkdown.contains("Best privacy-utility ratio") &&
+                assistantMarkdown.contains("Lowest average privacy loss") &&
+                assistantMarkdown.contains("Best fairness index"),
+            "AgentAssistantWidget analysis should include all required metric conclusions.");
+
+    const std::string assistantMarkdownPath =
+        (std::filesystem::temp_directory_path() / "gts_phase11_assistant.md").string();
+    require(assistantWidget->exportMarkdownForTesting(
+                QString::fromStdString(assistantMarkdownPath)),
+            "AgentAssistantWidget should export the generated Markdown analysis.");
+    std::ifstream assistantMarkdownFile(assistantMarkdownPath, std::ios::binary);
+    const std::string exportedAssistantMarkdown(
+        (std::istreambuf_iterator<char>(assistantMarkdownFile)),
+        std::istreambuf_iterator<char>());
+    require(exportedAssistantMarkdown.find(
+                "# GeoTaskShield Agent Assistant Analysis") != std::string::npos,
+            "Exported assistant Markdown should contain the generated analysis.");
 
     return 0;
 }

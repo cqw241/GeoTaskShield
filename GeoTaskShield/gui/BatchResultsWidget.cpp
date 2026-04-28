@@ -360,6 +360,11 @@ bool BatchResultsWidget::exportFilteredCsvForTesting(const QString& filePath) co
     return writeCsvToFile(filePath);
 }
 
+std::vector<BatchResultRecord> BatchResultsWidget::currentFilteredRecords() const
+{
+    return visibleRecords_;
+}
+
 void BatchResultsWidget::openCsv()
 {
     const QString filePath = QFileDialog::getOpenFileName(
