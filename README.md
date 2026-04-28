@@ -1,135 +1,268 @@
-# GeoTaskShield
+# GeoTaskShield 技术白皮书
 
-GeoTaskShield is a C++20/CMake simulator for privacy-preserving task allocation in mobile crowdsensing. It models workers and sensing tasks on a 2D map, applies location privacy mechanisms, runs task assignment algorithms, evaluates utility/privacy metrics, and presents results through console, CSV, Qt Widgets GUI, and a local experiment-report agent.
+面向移动群智感知的隐私保护任务分配仿真与可视化系统
+当前版本：`v0.8.0`
 
-Current release: `v0.8.0`. This release hardens the Phase 9 GUI Markdown and filtered CSV export workflow.
+## 摘要
 
-## Current Status
+GeoTaskShield 是一个使用 C++20、CMake 和 Qt Widgets 构建的隐私保护任务分配仿真系统。项目围绕移动群智感知场景中的一个核心问题展开：平台需要把感知任务分配给移动用户，但任务分配又依赖用户位置、任务距离、奖励、可靠性和隐私预算等敏感因素。系统通过可复现实验、算法对比、GUI 可视化、批量结果分析和 Markdown/CSV 报告导出，展示“隐私保护机制如何影响任务完成率、系统收益、公平性和用户隐私损失”。
 
-Completed phases:
+本项目尤其适合作为面向彭滔教授项目组招聘场景的技术展示材料。彭滔教授公开研究方向包括移动群智感知网、社交网络隐私保护、云计算安全和区块链技术；项目组招聘信息强调第一期进行 C++ 代码编写、软件开发、GUI 和系统开发，第二期涉及大语言模型与 Agent 开发。GeoTaskShield 当前版本已经覆盖第一期所需的软件工程主体能力，并为第二期 Agent/LLM 扩展预留了清晰接口。
 
-- Phase 1: Console MVP simulation pipeline.
-- Phase 2: Additional privacy mechanisms, assignment algorithms, comparison experiments, and CSV export.
-- Phase 3: Qt Widgets GUI visualization.
-- Phase 4: Local rule-based AIAgent and Markdown experiment report generation.
-- Phase 5: Batch experiment support, additional metrics, and richer CSV/Markdown export.
-- Phase 6: Engineering cleanup, release packaging, style rules, and `v0.6.0` release preparation.
-- Phase 7: GUI batch CSV result analysis and visualization, merged into `develop`.
-- Phase 8: Release and demo hardening for `v0.7.0`.
-- Phase 9: GUI Markdown report preview/export and filtered CSV export for Batch Results.
-- Phase 10: Release and demo hardening for `v0.8.0`.
+相关公开链接：
 
-## Features
+- 彭滔教授主页：<http://trust.gzhu.edu.cn/faculty/TaoPeng/index.html#/>
+- 彭滔教授 SCHOLAT 页面：<https://www.scholat.com/gzhutaopeng>
+- 广州大学计算机网络研究所教师页：<https://trust.gzhu.edu.cn/faculty.html>
 
-- Synthetic worker/task generation.
-- Location privacy mechanisms:
+## 项目意义
+
+移动群智感知系统通常依赖大量移动用户采集交通、噪声、空气质量、城市运行状态等数据。平台若直接使用真实位置进行任务分配，通常能获得更高任务完成率和更低移动成本；但真实位置也是高敏感隐私信息，可能暴露用户轨迹、生活区域和行为规律。
+
+GeoTaskShield 将这一矛盾抽象为可实验、可展示、可扩展的软件系统：
+
+- **研究问题可计算化**：用统一指标衡量完成率、移动距离、收益、隐私损失、算法耗时、负载均衡、公平性和超时率。
+- **算法影响可比较**：支持多种隐私机制和任务分配算法的矩阵式对比。
+- **结果解释可视化**：Qt GUI 展示单次仿真地图、批量实验摘要、图表和表格。
+- **实验过程可复现**：固定随机种子、CSV/Markdown 导出和轻量测试让结果便于复查。
+- **后续智能化可接入**：当前已有本地规则型 Agent 和 Markdown 报告生成能力，可自然演进到 LLM 驱动的实验助手。
+
+## 与项目组招聘方向的对应关系
+
+### 第一期：C++ 软件开发、GUI 和系统开发
+
+GeoTaskShield 当前版本主要体现以下能力：
+
+- **现代 C++ 工程能力**：使用 C++20、接口抽象、策略模式、工厂创建、Qt-free 核心模块和独立 GUI 模块。
+- **算法系统实现能力**：实现多种隐私保护机制、任务分配算法和指标计算逻辑。
+- **Qt Widgets GUI 开发能力**：提供参数面板、二维地图绘制、结果面板、日志面板和批量结果分析页。
+- **实验平台能力**：支持控制台实验、批量实验、CSV/Markdown 报告和 Windows 打包发布。
+- **工程交付能力**：提供 CMake Presets、Debug/Release 构建、CTest 验收、版本发布和演示指南。
+
+### 第二期：大语言模型与 Agent 开发
+
+GeoTaskShield 已经具备从软件系统向智能实验助手扩展的基础：
+
+- 当前 `agent` 模块支持自然语言实验请求解析。
+- 当前 `ReportGenerator` 支持 Markdown 报告生成。
+- 当前 GUI 已支持 Markdown 报告预览和导出。
+- 后续可以将规则解析器替换或增强为 LLM 调用层，让用户用自然语言配置实验、解释图表、生成对比结论和提出下一轮实验建议。
+
+当前实现刻意不调用在线模型、不保存 API key。若未来接入阿里云百炼、OpenAI 或其他模型服务，应通过运行时环境变量读取密钥，例如 `DASHSCOPE_API_KEY`，避免把密钥写入源码、文档、测试或提交记录。
+
+## 系统能力概览
+
+GeoTaskShield 当前支持：
+
+- 生成模拟 worker 和 sensing task。
+- 对 worker 位置进行隐私保护：
   - Grid Privacy
   - K-Anonymity Privacy
   - Laplace Noise Privacy
-- Assignment algorithms:
+- 使用不同任务分配算法完成匹配：
   - Nearest Greedy
   - Score Greedy
   - Hungarian
-- Metrics:
+- 计算实验指标：
   - completed task count
   - completion rate
   - average true moving distance
   - total reward
   - average privacy loss
   - algorithm runtime
-- Console 3 x 3 privacy/algorithm comparison.
-- CSV export to `phase2_results.csv`.
-- Qt Widgets GUI with a Simulation tab and a Batch Results analysis tab.
-- Batch Results CSV loading, filters, summary cards, sortable table, and a lightweight self-drawn bar chart.
-- Batch Results filtered CSV export for the current loaded and filtered rows.
-- Batch Results Markdown report preview and export for the current loaded and filtered rows.
-- Local natural-language experiment agent.
-- Markdown experiment report generation.
-- Batch experiment runner.
-- Batch CSV and Markdown export.
-- Additional metrics: worker load standard deviation, Jain fairness index, privacy-utility ratio, and timeout rate.
+  - worker load standard deviation
+  - Jain fairness index
+  - privacy-utility ratio
+  - timeout rate
+- 运行控制台 3 x 3 隐私机制/分配算法对比实验。
+- 导出控制台实验 CSV：`phase2_results.csv`。
+- 运行批量实验并导出：
+  - `phase5_batch_results.csv`
+  - `phase5_batch_report.md`
+- 提供 Qt Widgets GUI：
+  - `Simulation` tab：单次仿真参数、地图、指标和日志。
+  - `Batch Results` tab：加载批量 CSV、筛选、排序、摘要卡片、柱状图、当前行详情。
+  - `Export Filtered CSV`：导出当前筛选后的批量结果。
+  - `Preview Markdown`：预览当前筛选结果的 Markdown 报告。
+  - `Export Markdown`：导出当前筛选结果的 Markdown 报告。
+- 提供本地规则型实验 Agent：
+  - 自然语言请求解析。
+  - 实验运行。
+  - Markdown 报告生成。
 
-## Repository Layout
+## 技术架构
 
-```text
-GeoTaskShield/
-  CMakeLists.txt
-  CMakePresets.json
-  CHANGELOG.md
-  HANDOFF.md
-  README.md
-  git_guide.md
-  scripts/
-    package_windows.ps1
-  phase2_results.csv
-  GeoTaskShield/
-    app/
-      console/
-      agent_demo/
-      batch_demo/
-    model/
-    simulation/
-    privacy/
-    assignment/
-    evaluation/
-    data/
-    agent/
-    experiment/
-    gui/
-    tests/
+项目保持“核心算法层 Qt 无关、GUI 层只负责交互展示”的边界。
+
+```mermaid
+flowchart LR
+    A["Simulation Data<br/>workers / tasks"] --> B["Privacy Layer<br/>grid / k-anonymity / laplace"]
+    B --> C["Assignment Layer<br/>nearest / score / hungarian"]
+    C --> D["Evaluation Layer<br/>utility / privacy / fairness / timeout"]
+    D --> E["Experiment Outputs<br/>CSV / Markdown"]
+    D --> F["Qt GUI<br/>Simulation tab"]
+    E --> G["Batch Results GUI<br/>filter / chart / export"]
+    H["Rule-based Agent"] --> A
+    H --> E
 ```
 
-## Requirements
+核心模块：
+
+| 模块 | 作用 |
+|---|---|
+| `model` | 任务、worker、位置、配置和 assignment 数据结构 |
+| `simulation` | 数据生成与单次仿真编排 |
+| `privacy` | 位置隐私保护策略和工厂 |
+| `assignment` | 任务分配算法策略和工厂 |
+| `evaluation` | 任务完成率、收益、隐私损失、公平性等指标计算 |
+| `data` | 控制台实验 CSV 导出 |
+| `experiment` | 批量实验、批量 CSV 加载、筛选模型、报告字符串生成 |
+| `agent` | 本地自然语言配置解析、实验 Agent、Markdown 报告生成 |
+| `gui` | Qt Widgets GUI、地图绘制、批量结果页面和导出入口 |
+
+## 关键技术点
+
+### 1. 隐私保护任务分配抽象
+
+系统将 worker 的真实位置与暴露位置分离。隐私机制只改变分配算法可见的位置，评价指标仍能基于真实位置计算实际移动成本和隐私损失。这样可以同时观察“平台可用性”和“用户隐私保护”的张力。
+
+### 2. 策略模式与工厂模式
+
+隐私机制和分配算法均通过接口抽象：
+
+- `IPrivacyMechanism`
+- `IAssignmentAlgorithm`
+- `PrivacyFactory`
+- `AssignmentAlgorithmFactory`
+
+这让新增算法时不需要改动 GUI 或仿真主流程，只需要实现新策略并注册到工厂。
+
+### 3. 可复现实验与批量评估
+
+批量实验使用固定随机种子生成场景，除算法运行时间外，实验结果具有稳定复现性。CSV 加载器支持常见字段别名、UTF-8 BOM、CRLF/LF、quoted fields，并对缺列和非法数字给出明确错误信息。
+
+### 4. GUI 与核心解耦
+
+`model`、`simulation`、`privacy`、`assignment`、`evaluation`、`data`、`agent` 和 `experiment` 均为纯 C++ 模块；Qt 类型只出现在 `gui` 模块。这种边界有利于测试、复用和后续迁移。
+
+### 5. Agent 可演进路线
+
+当前 Agent 是本地规则型实现，避免依赖网络和密钥。后续可在不破坏系统主干的情况下扩展为：
+
+- LLM prompt 到实验配置的结构化解析。
+- 基于实验结果的自动解释和摘要。
+- 多轮实验建议生成。
+- GUI 中的自然语言实验助手。
+
+## 当前发布版本
+
+当前 release：`v0.8.0`
+
+`v0.8.0` 固化了 Phase 9 的 GUI 导出能力：
+
+- `Batch Results` 当前筛选 CSV 导出。
+- Markdown 报告预览。
+- Markdown 报告导出。
+- Qt-free 批量结果 CSV/Markdown 字符串生成。
+- v0.8.0 GUI 演示指南。
+
+发布包默认输出：
+
+```text
+out/package/GeoTaskShield-v0.8.0-windows-x64.zip
+```
+
+## 构建环境
+
+推荐环境：
 
 - Windows
 - Visual Studio 2026 with MSVC toolchain
 - CMake
 - Ninja
-- Qt 6.11 MSVC kit for GUI builds
+- Qt 6.11 MSVC kit
 
-The current Qt preset expects:
+当前 Qt preset 期望路径：
 
 ```text
 D:/Qt/6.11.0/msvc2022_64
 ```
 
-If Qt is installed elsewhere, update `CMAKE_PREFIX_PATH` in `CMakePresets.json`.
+如果 Qt 安装路径不同，需要修改 `CMakePresets.json` 中的 `CMAKE_PREFIX_PATH`。
 
-## Build and Test
+## 构建与测试
 
-Run commands from the project root in a Visual Studio Developer Command Prompt, or call `VsDevCmd.bat` from PowerShell.
+从项目根目录执行。推荐使用 Visual Studio Developer Command Prompt，或在 PowerShell 中调用 `VsDevCmd.bat`。
 
-### Core Console Build
+### 非 Qt Debug 构建与核心测试
 
 ```powershell
 cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 && cmake --preset x64-debug && cmake --build out\build\x64-debug && ctest --test-dir out\build\x64-debug --output-on-failure'
 ```
 
-Run the console comparison:
+运行控制台对比实验：
 
 ```powershell
 out\build\x64-debug\GeoTaskShield\GeoTaskShield.exe
 ```
 
-This prints 9 comparison rows and writes:
+### Qt Debug 构建与 GUI smoke test
+
+```powershell
+cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 && cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt && ctest --test-dir out\build\x64-debug-qt --output-on-failure'
+```
+
+运行 GUI：
+
+```powershell
+out\build\x64-debug-qt\GeoTaskShield\GeoTaskShieldGui.exe
+```
+
+### Release 构建与 Windows 打包
+
+```powershell
+cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 && cmake --preset x64-release-qt && cmake --build out\build\x64-release-qt'
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\package_windows.ps1
+```
+
+打包输出：
 
 ```text
-phase2_results.csv
+out/package/GeoTaskShield-v0.8.0-windows-x64.zip
 ```
 
-### Agent Report Demo
+## GUI 演示流程
 
-```powershell
-out\build\x64-debug\GeoTaskShield\GeoTaskShieldAgentDemo.exe
+### Simulation tab
+
+1. 启动 `GeoTaskShieldGui.exe`。
+2. 在左侧设置 worker 数量、task 数量、grid size、k、epsilon、隐私机制和分配算法。
+3. 点击 `Run Simulation`。
+4. 观察地图中的 worker、暴露位置、task 和 assignment 连线。
+5. 查看右侧指标和底部日志。
+
+### Batch Results tab
+
+1. 打开 `Batch Results` tab。
+2. 点击 `Open CSV`。
+3. 选择 `phase5_batch_results.csv`。
+4. 使用 Privacy / Algorithm 下拉框筛选结果。
+5. 使用 Metric 下拉框切换柱状图指标。
+6. 点击表头排序，并查看当前行详情。
+7. 点击 `Export Filtered CSV` 导出当前筛选结果。
+8. 点击 `Preview Markdown` 预览当前筛选结果报告。
+9. 点击 `Export Markdown` 导出 Markdown 报告。
+
+详细演示脚本见：
+
+```text
+docs/demo/v0.8.0-gui-demo-guide.md
 ```
 
-With a custom request:
-
-```powershell
-out\build\x64-debug\GeoTaskShield\GeoTaskShieldAgentDemo.exe "对比三种隐私机制，30个用户，10个任务，使用匈牙利算法"
-```
-
-Example supported prompts:
+## 示例自然语言 Agent 输入
 
 ```text
 100 个用户，50 个任务，k=5，使用匈牙利算法
@@ -137,155 +270,49 @@ Example supported prompts:
 对比三种隐私机制，50个用户，20个任务，使用最近贪心
 ```
 
-### Qt GUI Build
+当前 Agent 使用本地规则解析，不调用在线 LLM。
 
-```powershell
-cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 && cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt && ctest --test-dir out\build\x64-debug-qt --output-on-failure'
-```
+## 版本演进
 
-Run the GUI:
+| 阶段 | 内容 |
+|---|---|
+| Phase 1 | 控制台 MVP 仿真链路 |
+| Phase 2 | 多隐私机制、多分配算法、CSV 导出 |
+| Phase 3 | Qt Widgets 单次仿真 GUI |
+| Phase 4 | 本地规则型 Agent 和 Markdown 报告 |
+| Phase 5 | 批量实验、扩展指标、批量 CSV/Markdown |
+| Phase 6 | 工程整理、Release preset、Windows 打包 |
+| Phase 7 | GUI Batch Results 数据加载、筛选、图表和表格 |
+| Phase 8 | `v0.7.0` Release and Demo Hardening |
+| Phase 9 | GUI 筛选 CSV 导出、Markdown 预览/导出 |
+| Phase 10 | `v0.8.0` Release and Demo Hardening |
 
-```powershell
-out\build\x64-debug-qt\GeoTaskShield\GeoTaskShieldGui.exe
-```
+## 当前限制
 
-`GeoTaskShieldGui` runs `windeployqt` after build on Windows. Non-Qt executables such as `GeoTaskShield.exe` and `GeoTaskShieldTests.exe` do not need `windeployqt`.
+- 核心测试使用轻量自定义断言，尚未迁移到 GoogleTest 或 Catch2。
+- Hungarian 算法当前支持一任务对应一个展开 worker slot，不是严格多 worker 协同任务优化模型。
+- Laplace 隐私是仿真层面的坐标扰动，不是完整差分隐私证明实现。
+- Agent 当前为规则型解析器，不调用在线大模型。
+- Batch Results 图表使用自绘轻量柱状图，尚未引入 Qt Graphs 或 Qt Charts。
 
-The GUI contains:
+## 后续扩展建议
 
-- `Simulation`: run a single simulation with parameter controls, map canvas, metrics, and logs.
-- `Batch Results`: open `phase5_batch_results.csv` or a same-structure CSV, filter by privacy/algorithm, select a metric, inspect summary cards, view a bar chart, sort the detail table, export the filtered CSV rows, and preview or export a Markdown report for the current rows.
+面向项目组第二期方向，可以优先考虑：
 
-### Batch Results Demo
+- 将规则型 Agent 扩展为 LLM-assisted experiment planner。
+- 让 Agent 根据批量 CSV 自动生成对比分析结论。
+- 在 GUI 中加入自然语言实验入口。
+- 支持更多隐私保护机制和任务分配算法。
+- 引入更系统的单元测试框架和持续集成流程。
 
-The `Batch Results` tab is intended for reviewing batch experiment outputs without rerunning the batch experiment.
+## 仓库与文档
 
-Demo flow:
+- `HANDOFF.md`：阶段交接、构建验收、设计约束。
+- `CHANGELOG.md`：版本更新记录。
+- `docs/demo/`：GUI 演示指南。
+- `phase5_batch_results.csv`：批量实验示例结果。
+- `phase5_batch_report.md`：批量实验示例 Markdown 报告。
 
-1. Run `GeoTaskShieldGui.exe`.
-2. Open the `Batch Results` tab.
-3. Click `Open CSV`.
-4. Select `phase5_batch_results.csv`.
-5. Filter by privacy mechanism or assignment algorithm.
-6. Select a metric such as `completionRate`, `privacyUtilityRatio`, `fairnessIndex`, or `averagePrivacyLoss`.
-7. Sort the table by clicking column headers and select rows to inspect details.
-8. Click `Export Filtered CSV` to save the current filtered rows as a `.csv` file.
-9. Click `Preview Markdown` to review the generated report.
-10. Click `Export Markdown` to save the report as a `.md` file.
+## 说明
 
-Example CSV header:
-
-```text
-scenario,workers,tasks,grid_size,k,epsilon,privacy,algorithm,completed_tasks,total_tasks,completion_rate,average_moving_distance,total_reward,average_privacy_loss,algorithm_runtime_ms,user_load_stddev,fairness_index,privacy_utility_ratio,timeout_rate
-```
-
-Recommended screenshots for reports or demos:
-
-- `Simulation` tab after running a simulation, showing parameter controls, map canvas, metrics, and logs.
-- `Batch Results` tab after loading `phase5_batch_results.csv`, showing filters, summary cards, the bar chart, selected-row details, and the sortable table.
-
-See [docs/demo/v0.8.0-gui-demo-guide.md](docs/demo/v0.8.0-gui-demo-guide.md) for the v0.8.0 export-focused demo script and screenshot checklist.
-
-### Release Build and Package
-
-Build the Release GUI preset:
-
-```powershell
-cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 && cmake --preset x64-release-qt && cmake --build out\build\x64-release-qt'
-```
-
-Create a local Windows ZIP package:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package_windows.ps1
-```
-
-The package is generated under:
-
-```text
-out/package/GeoTaskShield-v0.8.0-windows-x64.zip
-```
-
-The package includes the demo CSV `phase5_batch_results.csv` and the GUI demo guide under `docs/demo/`.
-
-Package outputs under `out/` are generated artifacts and are not committed.
-
-## AIAgent Notes
-
-The current agent is intentionally local and rule-based. It does not call an online model and does not require network access.
-
-If a future version integrates Aliyun Bailian or another model provider, API keys must be read from runtime environment variables such as `DASHSCOPE_API_KEY`. Do not commit API keys, generated secrets, or model credentials.
-
-## Batch Experiment Demo
-
-```powershell
-out\build\x64-debug\GeoTaskShield\GeoTaskShieldBatchDemo.exe
-```
-
-The batch demo runs deterministic scenarios across worker/task counts, epsilon, k, and grid size. It prints a Markdown table and writes:
-
-```text
-phase5_batch_results.csv
-phase5_batch_report.md
-```
-
-## Git Workflow
-
-This project follows the Git Flow rules in `git_guide.md`:
-
-- `main`: production-ready code
-- `develop`: integration branch
-- `feature/*`: feature work
-- `hotfix/*`: urgent fixes
-- `release/*`: release preparation
-
-Commit messages use:
-
-```text
-<type>(<scope>): <description>
-```
-
-Examples:
-
-```text
-feat(agent): add experiment report agent
-docs(handoff): update phase 4 status
-```
-
-Release branches use `release/*`. Recent release branches:
-
-```text
-release/phase6-engineering-release
-release/v0.7.0
-release/v0.8.0
-```
-
-Recent release tags:
-
-```text
-v0.6.0
-v0.7.0
-v0.8.0
-```
-
-## Code Style
-
-- `.clang-format` defines the project C++ formatting convention.
-- MSVC builds use `/W4`; non-MSVC builds use `-Wall -Wextra -Wpedantic`.
-- Existing code was not broadly reformatted in Phase 6 to keep the release diff focused.
-
-## Documentation
-
-- `HANDOFF.md`: current project handoff, phase status, verification commands, and next steps.
-- `GeoTaskShield.md`: original project concept.
-- `CHANGELOG.md`: release notes.
-- `docs/superpowers/specs/`: design notes for implemented phases.
-- `docs/superpowers/plans/`: implementation plans.
-
-## Current Limitations
-
-- The core tests use a lightweight custom assertion style rather than GoogleTest or Catch2.
-- Hungarian assignment supports one task per expanded worker slot, not strict multi-worker task optimization.
-- Laplace privacy is a simulator-level coordinate perturbation, not a full formal differential privacy proof.
-- The AIAgent parser is rule-based and supports common prompt patterns only.
-- The Batch Results tab uses lightweight custom painting rather than Qt Charts.
+本项目是围绕彭滔教授公开研究方向和项目组招聘描述进行的技术展示型实现，重点体现 C++ 软件工程、GUI 系统开发、隐私保护任务分配仿真和 Agent 扩展潜力。除公开资料链接外，本文不声称本仓库为项目组官方成果或官方课题代码。
