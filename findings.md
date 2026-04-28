@@ -1,6 +1,10 @@
 # Findings & Decisions
 
 ## Requirements
+- Enter GeoTaskShield Phase 8: release and demo hardening for `v0.7.0`.
+- Phase 8 must freeze feature scope and avoid Markdown preview, filtered export, Qt Graphs, and online LLM work.
+- Release package must include `phase5_batch_results.csv` or equivalent demo data.
+- Release package should include GUI demo and screenshot guidance for Simulation and Batch Results tabs.
 - Enter GeoTaskShield Phase 7: GUI batch CSV result visualization.
 - Phase 7 must only add CSV result analysis/display in the GUI.
 - Do not change `SimulationEngine`, privacy/assignment factories, Agent, or `BatchExperiment` semantics.
@@ -72,6 +76,8 @@
 | Phase 7 puts batch CSV analysis in `experiment` | The loader/model are Qt-free and need non-Qt test coverage. |
 | Phase 7 avoids Qt Charts | Qt Charts is deprecated in Qt 6.11 and a custom single-metric bar chart is enough for this phase. |
 | Summary cards include source identity | Metric values alone are not enough to identify which scenario/privacy/algorithm produced the best result. |
+| Phase 8 uses `release/v0.7.0` | The user requested a release branch to stabilize Phase 7 outputs into a versioned package. |
+| Phase 8 keeps `phase5_batch_results.csv` as demo data | It is the current real batch CSV output and already matches the Batch Results loader. |
 
 ## Issues Encountered
 | Issue | Resolution |
@@ -86,6 +92,7 @@
 | Phase 5 started from `develop` after syncing `main` publish notes | Merged `main` into `develop`, then created `feature/phase5-experiment-enhancements`. |
 | Phase 6 started after Phase 5 feature completion | Merged `feature/phase5-experiment-enhancements` into `develop`, then created `release/phase6-engineering-release`. |
 | Phase 7 started from `develop` | Created `feature/phase7-gui-batch-results`; implementation is GUI-only CSV analysis. |
+| Phase 8 started from `develop` | Created `release/v0.7.0`; no new runtime features are in scope. |
 
 ## Resources
 - Project specification: `D:\VS2026_Projects\GeoTaskShield\GeoTaskShield.md`

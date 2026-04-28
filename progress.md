@@ -2,6 +2,37 @@
 
 ## Session: 2026-04-27
 
+### Phase 8: v0.7.0 Release and Demo Hardening
+- **Status:** complete
+- Actions taken:
+  - Created `release/v0.7.0` from `develop`.
+  - Confirmed Phase 8 scope is release hardening only, with no Markdown preview, filtered export, Qt Graphs, or online LLM.
+  - Updated CMake project version to `0.7.0`.
+  - Updated Windows package script default version to `v0.7.0`.
+  - Added `docs/demo/v0.7.0-gui-demo-guide.md` with GUI demo flow and screenshot checklist.
+  - Updated README with Batch Results usage, example CSV header, demo flow, screenshot guidance, and `v0.7.0` package path.
+  - Updated CHANGELOG and HANDOFF for `v0.7.0`.
+  - Updated install/package configuration so demo docs and `phase5_batch_results.csv` are included in release outputs.
+  - Verified non-Qt Debug build and `GeoTaskShieldCoreTests`.
+  - Verified Qt Debug build, `GeoTaskShieldCoreTests`, and `GeoTaskShieldGuiSmokeTests`.
+  - Verified Qt Release build.
+  - Generated `out/package/GeoTaskShield-v0.7.0-windows-x64.zip`.
+  - Confirmed the package contains `GeoTaskShieldGui.exe`, `phase5_batch_results.csv`, README/HANDOFF, and `docs\demo\v0.7.0-gui-demo-guide.md`.
+- Files created/modified:
+  - `docs/demo/v0.7.0-gui-demo-guide.md` (created)
+  - `docs/superpowers/plans/2026-04-28-phase8-v0.7.0-release-hardening.md` (created)
+  - `CMakeLists.txt` (modified)
+  - `GeoTaskShield/CMakeLists.txt` (modified)
+  - `scripts/package_windows.ps1` (modified)
+  - `README.md` (modified)
+  - `HANDOFF.md` (modified)
+  - `CHANGELOG.md` (modified)
+  - `task_plan.md` (updated)
+  - `progress.md` (updated)
+- Git:
+  - Release branch: `release/v0.7.0`
+  - Publish target: merge to `main`, tag `v0.7.0`, merge back to `develop`, and push.
+
 ### Phase 7: GUI Batch Results Visualization
 - **Status:** complete
 - Actions taken:
