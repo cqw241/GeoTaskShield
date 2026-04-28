@@ -330,142 +330,7 @@ GeoTaskShieldAgentDemo
 
 ---
 
-## 8. 构建与验收方式
-
-推荐在 Visual Studio Developer Command Prompt 或通过 `VsDevCmd.bat` 加载 MSVC 环境后执行。
-
-### 8.1 非 Qt 构建、测试、控制台实验
-
-```powershell
-cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 && cmake --preset x64-debug && cmake --build out\build\x64-debug && ctest --test-dir out\build\x64-debug --output-on-failure && out\build\x64-debug\GeoTaskShield\GeoTaskShield.exe'
-```
-
-验收结果：
-
-```text
-1/1 Test #1: GeoTaskShieldCoreTests Passed
-100% tests passed, 0 tests failed out of 1
-```
-
-### 8.2 Agent demo
-
-```powershell
-out\build\x64-debug\GeoTaskShield\GeoTaskShieldAgentDemo.exe
-```
-
-默认会输出 Markdown 实验报告。
-
-也可以传入自定义请求：
-
-```powershell
-out\build\x64-debug\GeoTaskShield\GeoTaskShieldAgentDemo.exe "对比三种隐私机制，30个用户，10个任务，使用匈牙利算法"
-```
-
-### 8.3 Batch demo
-
-```powershell
-out\build\x64-debug\GeoTaskShield\GeoTaskShieldBatchDemo.exe
-```
-
-默认会输出批量实验 Markdown 报告，并生成：
-
-```text
-phase5_batch_results.csv
-phase5_batch_report.md
-```
-
-### 8.4 Qt GUI 构建与测试
-
-```powershell
-cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 && cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt && ctest --test-dir out\build\x64-debug-qt --output-on-failure'
-```
-
-验收结果：
-
-```text
-2/2 tests passed
-```
-
-运行 GUI：
-
-```powershell
-out\build\x64-debug-qt\GeoTaskShield\GeoTaskShieldGui.exe
-```
-
-Qt 相关注意：
-
-- `x64-debug-qt` preset 当前写入本机 Qt 路径 `D:/Qt/6.11.0/msvc2022_64`；
-- 如果换机器，需要修改 `CMAKE_PREFIX_PATH`；
-- 构建时可能提示 `Could NOT find WrapVulkanHeaders`，当前 Widgets GUI 不依赖 Vulkan，已验证不影响构建和测试。
-
-### 8.5 Release 构建与 Windows 打包
-
-Release Qt 构建：
-
-```powershell
-cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 && cmake --preset x64-release-qt && cmake --build out\build\x64-release-qt'
-```
-
-Windows ZIP 打包：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package_windows.ps1
-```
-
-默认输出：
-
-```text
-out\package\GeoTaskShield-v0.8.0-windows-x64.zip
-```
-
-打包输出位于 `out/`，属于生成产物，不提交进 Git。
-
----
-
-## 9. 当前设计约束与注意事项
-
-1. 核心算法层保持 Qt 无关。
-   - `model`、`simulation`、`privacy`、`assignment`、`evaluation`、`data`、`agent` 均为纯 C++。
-   - Qt 类型只应出现在 `gui` 模块。
-
-2. 当前测试仍是轻量自定义测试。
-   - 文件：`GeoTaskShield/tests/test_core.cpp`
-   - GUI smoke test：`GeoTaskShield/gui/tests/test_gui_smoke.cpp`
-   - 未引入 GoogleTest/Catch2。
-
-3. Hungarian 算法当前语义：
-   - 支持一对一任务匹配；
-   - 通过展开 `Worker::maxTasks` 为多个 worker slot 支持简单容量；
-   - 不支持一个任务需要多个 worker 的严格优化建模。
-
-4. Laplace 噪声当前语义：
-   - 使用固定随机种子，保证测试和实验可复现；
-   - 属于仿真意义上的坐标扰动，不是完整差分隐私证明实现。
-
-5. AIAgent 当前语义：
-   - 本地规则解析；
-   - 不依赖网络；
-   - 不调用大模型；
-   - 不保存密钥。
-
-6. 批量实验当前语义：
-   - 使用预设场景列表；
-   - 通过现有工厂和 `SimulationEngine` 执行；
-   - CSV 包含算法运行耗时，重复运行时该列可能有轻微波动。
-
-7. 旧 Visual Studio 模板入口 `GeoTaskShield.cpp` 和 `GeoTaskShield.h` 已在阶段 6 删除，当前入口统一位于 `GeoTaskShield/app/*/main.cpp`。
-
-8. MSVC 构建已给项目目标增加 `/utf-8`，用于稳定支持中文 prompt 测试和 demo 字符串。
-
-9. 阶段 6 增加 `.clang-format` 作为 C++ 格式约束，并给 MSVC 目标增加 `/W4` 警告等级。
-
----
-
-## 10. 已完成阶段补充记录
-
-以下内容记录阶段 5 之后的已完成增量，避免把已完成阶段误写成后续计划。
-
-### 阶段 5：实验能力增强
+## 8. 阶段 5：实验能力增强
 
 目标：让系统更适合论文/课程项目展示。
 
@@ -519,7 +384,7 @@ phase5_batch_report.md
 - 核心测试通过；
 - 结果由固定随机种子驱动，除算法运行耗时外可复现。
 
-### 阶段 6：工程整理与发布
+## 9. 阶段 6：工程整理与发布
 
 目标：形成更标准的 C++/Qt 项目交付形态。
 
@@ -555,7 +420,7 @@ phase5_batch_report.md
 - `v0.6.0` 发布包生成于 `out\package\GeoTaskShield-v0.6.0-windows-x64.zip`；
 - 发布包属于生成产物，不提交进 Git。
 
-### 阶段 7：GUI 数据可视化增强
+## 10. 阶段 7：GUI 数据可视化增强
 
 目标：在不改变核心算法、Agent 或 BatchExperiment 语义的前提下，为 Qt GUI 增加批量实验 CSV 结果分析与展示页。
 
@@ -608,7 +473,7 @@ GeoTaskShield/gui/
 - 未引入 Qt Charts；
 - 未修改 `SimulationEngine`、`PrivacyFactory`、`AssignmentAlgorithmFactory`、Agent 或 `BatchExperiment` 语义。
 
-### 阶段 8：Release and Demo Hardening
+## 11. 阶段 8：Release and Demo Hardening
 
 目标：将阶段 7 的 GUI 批量结果可视化成果固化为 `v0.7.0` 发布版，而不是继续新增功能。
 
@@ -646,7 +511,7 @@ docs/demo/v0.7.0-gui-demo-guide.md
 - 发布包包含 `phase5_batch_results.csv` 和 `docs/demo/v0.7.0-gui-demo-guide.md`；
 - 未新增 Markdown 报告预览、筛选结果导出、Qt Graphs 或在线 LLM。
 
-### 阶段 9：GUI 报告与筛选结果导出入口
+## 12. 阶段 9：GUI 报告与筛选结果导出入口
 
 目标：在不重新运行批量实验、不引入 Qt WebEngine/Qt Charts、且不改变核心仿真语义的前提下，为 `Batch Results` 页增加 Markdown 报告预览/导出入口，以及当前筛选 CSV 导出入口。
 
@@ -673,7 +538,7 @@ docs/demo/v0.7.0-gui-demo-guide.md
 - Qt 类型仍只出现在 `gui` 模块，Markdown 报告字符串生成保持在 Qt-free `experiment` 模块。
 - 导出 CSV 反映当前 privacy/algorithm 筛选状态，不重新解释表格列头排序。
 
-### 阶段 10：Release and Demo Hardening
+## 13. 阶段 10：Release and Demo Hardening
 
 目标：将阶段 9 的 GUI Markdown 报告预览/导出和当前筛选 CSV 导出能力固化为 `v0.8.0` 正式发布版，不继续新增 Qt Graphs、GoogleTest 迁移或在线 LLM 集成。
 
@@ -711,7 +576,138 @@ docs/demo/v0.8.0-gui-demo-guide.md
 
 ---
 
-## 11. 建议下一步
+## 14. 构建与验收方式
+
+推荐在 Visual Studio Developer Command Prompt 或通过 `VsDevCmd.bat` 加载 MSVC 环境后执行。
+
+### 14.1 非 Qt 构建、测试、控制台实验
+
+```powershell
+cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 && cmake --preset x64-debug && cmake --build out\build\x64-debug && ctest --test-dir out\build\x64-debug --output-on-failure && out\build\x64-debug\GeoTaskShield\GeoTaskShield.exe'
+```
+
+验收结果：
+
+```text
+1/1 Test #1: GeoTaskShieldCoreTests Passed
+100% tests passed, 0 tests failed out of 1
+```
+
+### 14.2 Agent demo
+
+```powershell
+out\build\x64-debug\GeoTaskShield\GeoTaskShieldAgentDemo.exe
+```
+
+默认会输出 Markdown 实验报告。
+
+也可以传入自定义请求：
+
+```powershell
+out\build\x64-debug\GeoTaskShield\GeoTaskShieldAgentDemo.exe "对比三种隐私机制，30个用户，10个任务，使用匈牙利算法"
+```
+
+### 14.3 Batch demo
+
+```powershell
+out\build\x64-debug\GeoTaskShield\GeoTaskShieldBatchDemo.exe
+```
+
+默认会输出批量实验 Markdown 报告，并生成：
+
+```text
+phase5_batch_results.csv
+phase5_batch_report.md
+```
+
+### 14.4 Qt GUI 构建与测试
+
+```powershell
+cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 && cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt && ctest --test-dir out\build\x64-debug-qt --output-on-failure'
+```
+
+验收结果：
+
+```text
+2/2 tests passed
+```
+
+运行 GUI：
+
+```powershell
+out\build\x64-debug-qt\GeoTaskShield\GeoTaskShieldGui.exe
+```
+
+Qt 相关注意：
+
+- `x64-debug-qt` preset 当前写入本机 Qt 路径 `D:/Qt/6.11.0/msvc2022_64`；
+- 如果换机器，需要修改 `CMAKE_PREFIX_PATH`；
+- 构建时可能提示 `Could NOT find WrapVulkanHeaders`，当前 Widgets GUI 不依赖 Vulkan，已验证不影响构建和测试。
+
+### 14.5 Release 构建与 Windows 打包
+
+Release Qt 构建：
+
+```powershell
+cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 && cmake --preset x64-release-qt && cmake --build out\build\x64-release-qt'
+```
+
+Windows ZIP 打包：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\package_windows.ps1
+```
+
+默认输出：
+
+```text
+out\package\GeoTaskShield-v0.8.0-windows-x64.zip
+```
+
+打包输出位于 `out/`，属于生成产物，不提交进 Git。
+
+---
+
+## 15. 当前设计约束与注意事项
+
+1. 核心算法层保持 Qt 无关。
+   - `model`、`simulation`、`privacy`、`assignment`、`evaluation`、`data`、`agent` 均为纯 C++。
+   - Qt 类型只应出现在 `gui` 模块。
+
+2. 当前测试仍是轻量自定义测试。
+   - 文件：`GeoTaskShield/tests/test_core.cpp`
+   - GUI smoke test：`GeoTaskShield/gui/tests/test_gui_smoke.cpp`
+   - 未引入 GoogleTest/Catch2。
+
+3. Hungarian 算法当前语义：
+   - 支持一对一任务匹配；
+   - 通过展开 `Worker::maxTasks` 为多个 worker slot 支持简单容量；
+   - 不支持一个任务需要多个 worker 的严格优化建模。
+
+4. Laplace 噪声当前语义：
+   - 使用固定随机种子，保证测试和实验可复现；
+   - 属于仿真意义上的坐标扰动，不是完整差分隐私证明实现。
+
+5. AIAgent 当前语义：
+   - 本地规则解析；
+   - 不依赖网络；
+   - 不调用大模型；
+   - 不保存密钥。
+
+6. 批量实验当前语义：
+   - 使用预设场景列表；
+   - 通过现有工厂和 `SimulationEngine` 执行；
+   - CSV 包含算法运行耗时，重复运行时该列可能有轻微波动。
+
+7. 旧 Visual Studio 模板入口 `GeoTaskShield.cpp` 和 `GeoTaskShield.h` 已在阶段 6 删除，当前入口统一位于 `GeoTaskShield/app/*/main.cpp`。
+
+8. MSVC 构建已给项目目标增加 `/utf-8`，用于稳定支持中文 prompt 测试和 demo 字符串。
+
+9. 阶段 6 增加 `.clang-format` 作为 C++ 格式约束，并给 MSVC 目标增加 `/W4` 警告等级。
+
+---
+
+## 16. 建议下一步
 
 Phase 10 之后可继续考虑：
 
