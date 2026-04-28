@@ -27,6 +27,8 @@ public:
     std::optional<BatchResultSummary> lowestAveragePrivacyLoss() const;
 
     std::vector<ChartBar> chartBars(BatchResultMetric metric) const;
+    std::string markdownReport() const;
+    std::string csvReport() const;
 
 private:
     std::vector<BatchResultRecord> records_;

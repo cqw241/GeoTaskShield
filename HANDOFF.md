@@ -2,8 +2,8 @@
 
 更新时间：2026-04-28
 项目路径：`D:\VS2026_Projects\GeoTaskShield`
-当前状态：阶段 1 至阶段 8 已完成并通过本地验收。阶段 8 将阶段 7 GUI 批量结果可视化固化为 `v0.7.0` 发布版。当前发布版本：`v0.7.0`。
-当前开发分支：`develop`
+当前状态：阶段 1 至阶段 8 已完成并通过本地验收。阶段 8 将阶段 7 GUI 批量结果可视化固化为 `v0.7.0` 发布版。阶段 9 正在为 GUI 增加 Markdown 报告预览/导出入口和当前筛选 CSV 导出能力。当前发布版本：`v0.7.0`。
+当前开发分支：`feature/phase9-markdown-report-gui`
 
 ---
 
@@ -21,6 +21,8 @@ GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配
 - 导出 CSV 实验结果；
 - 通过 Qt Widgets GUI 选择参数、运行仿真、显示指标和二维分配图；
 - 通过 Qt Widgets GUI 的 `Batch Results` 页加载批量实验 CSV、筛选、排序、查看摘要卡片和单指标柱状图；
+- 通过 Qt Widgets GUI 的 `Batch Results` 页导出当前筛选后的 CSV 结果；
+- 通过 Qt Widgets GUI 的 `Batch Results` 页基于当前筛选结果预览或导出 Markdown 报告；
 - 通过本地规则型 AIAgent 解析自然语言实验请求并生成 Markdown 报告；
 - 一键运行批量实验并导出 CSV/Markdown 报告。
 
@@ -642,13 +644,38 @@ docs/demo/v0.7.0-gui-demo-guide.md
 - 发布包包含 `phase5_batch_results.csv` 和 `docs/demo/v0.7.0-gui-demo-guide.md`；
 - 未新增 Markdown 报告预览、筛选结果导出、Qt Graphs 或在线 LLM。
 
+### 阶段 9：GUI 报告与筛选结果导出入口
+
+目标：在不重新运行批量实验、不引入 Qt WebEngine/Qt Charts、且不改变核心仿真语义的前提下，为 `Batch Results` 页增加 Markdown 报告预览/导出入口，以及当前筛选 CSV 导出入口。
+
+已完成内容：
+
+- `BatchResultModel` 新增 `markdownReport()`，基于当前 privacy/algorithm 筛选后的记录生成 Markdown 表格与摘要；
+- `BatchResultModel` 新增 `csvReport()`，基于当前 privacy/algorithm 筛选后的记录生成 Phase 5 同结构 CSV；
+- `BatchResultsWidget` 左侧控制区新增：
+  - `Export Filtered CSV`：通过保存对话框导出当前筛选后的 `.csv` 文件；
+  - `Preview Markdown`：用 Qt `QTextEdit::setMarkdown` 预览当前报告；
+  - `Export Markdown`：通过保存对话框导出 `.md` 文件；
+- 核心测试和 GUI smoke test 覆盖：
+  - 当前筛选 CSV 只包含匹配筛选条件的行；
+  - CSV 导出入口存在并可写出文件；
+  - Markdown 预览/导出入口存在；
+  - 加载 CSV 后可生成 Markdown 标题、表格行和摘要；
+  - 导出的 `.md` 文件包含生成的报告内容。
+
+设计约束：
+
+- CSV 和 Markdown 内容来自已加载 CSV 的当前筛选结果；
+- 不调用在线 LLM；
+- 不修改 `SimulationEngine`、`PrivacyFactory`、`AssignmentAlgorithmFactory`、Agent 或 `BatchExperiment` 语义；
+- Qt 类型仍只出现在 `gui` 模块，Markdown 报告字符串生成保持在 Qt-free `experiment` 模块。
+- 导出 CSV 反映当前 privacy/algorithm 筛选状态，不重新解释表格列头排序。
+
 ---
 
 ## 11. 建议下一步
 
-建议下一轮进入 Phase 9，再考虑新增功能：
+Phase 9 之后可继续考虑：
 
-1. 在 GUI 中增加 Markdown 报告预览或导出入口；
-2. 为 Batch Results 增加导出当前筛选结果能力；
-3. 如后续需要复杂交互图表，再评估 Qt Graphs；
-4. 继续拆分核心测试，或评估引入 GoogleTest/Catch2。
+1. 如后续需要复杂交互图表，再评估 Qt Graphs；
+2. 继续拆分核心测试，或评估引入 GoogleTest/Catch2。

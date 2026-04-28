@@ -4,6 +4,9 @@
 #include "gui/MetricBarChart.h"
 
 #include <QComboBox>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QFile>
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QGridLayout>
@@ -153,6 +156,12 @@ BatchResultsWidget::BatchResultsWidget(QWidget* parent)
     auto* filterForm = new QFormLayout;
 
     openButton_ = new QPushButton("Open CSV", this);
+    exportFilteredCsvButton_ = new QPushButton("Export Filtered CSV", this);
+    exportFilteredCsvButton_->setObjectName("exportFilteredCsvButton");
+    previewMarkdownButton_ = new QPushButton("Preview Markdown", this);
+    previewMarkdownButton_->setObjectName("previewMarkdownButton");
+    exportMarkdownButton_ = new QPushButton("Export Markdown", this);
+    exportMarkdownButton_->setObjectName("exportMarkdownButton");
     resetButton_ = new QPushButton("Reset filters", this);
     fileLabel_ = new QLabel("No CSV loaded", this);
     fileLabel_->setWordWrap(true);
@@ -177,8 +186,11 @@ BatchResultsWidget::BatchResultsWidget(QWidget* parent)
     leftLayout->addWidget(openButton_);
     leftLayout->addWidget(fileLabel_);
     leftLayout->addLayout(filterForm);
-    leftLayout->addStretch();
     leftLayout->addWidget(resetButton_);
+    leftLayout->addWidget(exportFilteredCsvButton_);
+    leftLayout->addWidget(previewMarkdownButton_);
+    leftLayout->addWidget(exportMarkdownButton_);
+    leftLayout->addStretch();
     leftPanel->setMinimumWidth(240);
     leftPanel->setMaximumWidth(320);
 
@@ -249,6 +261,15 @@ BatchResultsWidget::BatchResultsWidget(QWidget* parent)
     connect(openButton_, &QPushButton::clicked, this, [this]() {
         openCsv();
     });
+    connect(exportFilteredCsvButton_, &QPushButton::clicked, this, [this]() {
+        exportFilteredCsv();
+    });
+    connect(previewMarkdownButton_, &QPushButton::clicked, this, [this]() {
+        previewMarkdown();
+    });
+    connect(exportMarkdownButton_, &QPushButton::clicked, this, [this]() {
+        exportMarkdown();
+    });
     connect(resetButton_, &QPushButton::clicked, this, [this]() {
         resetFilters();
     });
@@ -309,6 +330,36 @@ void BatchResultsWidget::sortByColumnForTesting(const QString& fieldName, Qt::So
     }
 }
 
+bool BatchResultsWidget::hasMarkdownActionsForTesting() const
+{
+    return previewMarkdownButton_ != nullptr && exportMarkdownButton_ != nullptr;
+}
+
+QString BatchResultsWidget::markdownReportForTesting() const
+{
+    return QString::fromStdString(currentMarkdownReport());
+}
+
+bool BatchResultsWidget::exportMarkdownForTesting(const QString& filePath) const
+{
+    return writeMarkdownToFile(filePath);
+}
+
+bool BatchResultsWidget::hasFilteredCsvExportActionForTesting() const
+{
+    return exportFilteredCsvButton_ != nullptr;
+}
+
+QString BatchResultsWidget::filteredCsvForTesting() const
+{
+    return QString::fromStdString(currentCsvReport());
+}
+
+bool BatchResultsWidget::exportFilteredCsvForTesting(const QString& filePath) const
+{
+    return writeCsvToFile(filePath);
+}
+
 void BatchResultsWidget::openCsv()
 {
     const QString filePath = QFileDialog::getOpenFileName(
@@ -316,6 +367,82 @@ void BatchResultsWidget::openCsv()
     if (!filePath.isEmpty()) {
         loadCsvFile(filePath);
     }
+}
+
+void BatchResultsWidget::exportFilteredCsv()
+{
+    if (visibleRecords_.empty()) {
+        QMessageBox::information(this, "No export data",
+                                 "Load a CSV or adjust filters before exporting CSV.");
+        return;
+    }
+
+    QString filePath = QFileDialog::getSaveFileName(
+        this, "Export Filtered CSV", "filtered-batch-results.csv",
+        "CSV files (*.csv);;All files (*.*)");
+    if (filePath.isEmpty()) {
+        return;
+    }
+    if (!filePath.endsWith(".csv", Qt::CaseInsensitive)) {
+        filePath += ".csv";
+    }
+
+    if (!writeCsvToFile(filePath)) {
+        QMessageBox::warning(this, "Export failed",
+                             "Could not write the filtered CSV to the selected file.");
+        return;
+    }
+    QMessageBox::information(this, "Export complete", "Filtered CSV exported.");
+}
+
+void BatchResultsWidget::previewMarkdown()
+{
+    if (visibleRecords_.empty()) {
+        QMessageBox::information(this, "No report data",
+                                 "Load a CSV or adjust filters before previewing Markdown.");
+        return;
+    }
+
+    QDialog dialog(this);
+    dialog.setWindowTitle("Markdown Report Preview");
+    auto* layout = new QVBoxLayout(&dialog);
+    auto* preview = new QTextEdit(&dialog);
+    preview->setReadOnly(true);
+    preview->setMarkdown(QString::fromStdString(currentMarkdownReport()));
+    layout->addWidget(preview);
+
+    auto* buttons = new QDialogButtonBox(QDialogButtonBox::Close, &dialog);
+    layout->addWidget(buttons);
+    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+    dialog.resize(760, 560);
+    dialog.exec();
+}
+
+void BatchResultsWidget::exportMarkdown()
+{
+    if (visibleRecords_.empty()) {
+        QMessageBox::information(this, "No report data",
+                                 "Load a CSV or adjust filters before exporting Markdown.");
+        return;
+    }
+
+    QString filePath = QFileDialog::getSaveFileName(
+        this, "Export Markdown Report", "batch-results-report.md",
+        "Markdown files (*.md);;All files (*.*)");
+    if (filePath.isEmpty()) {
+        return;
+    }
+    if (!filePath.endsWith(".md", Qt::CaseInsensitive)) {
+        filePath += ".md";
+    }
+
+    if (!writeMarkdownToFile(filePath)) {
+        QMessageBox::warning(this, "Export failed",
+                             "Could not write the Markdown report to the selected file.");
+        return;
+    }
+    QMessageBox::information(this, "Export complete", "Markdown report exported.");
 }
 
 void BatchResultsWidget::resetFilters()
@@ -478,6 +605,46 @@ int BatchResultsWidget::columnForFieldName(const QString& fieldName) const
         }
     }
     return -1;
+}
+
+std::string BatchResultsWidget::currentMarkdownReport() const
+{
+    return model_.markdownReport();
+}
+
+std::string BatchResultsWidget::currentCsvReport() const
+{
+    return model_.csvReport();
+}
+
+bool BatchResultsWidget::writeMarkdownToFile(const QString& filePath) const
+{
+    if (filePath.isEmpty()) {
+        return false;
+    }
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        return false;
+    }
+
+    const QByteArray content = QString::fromStdString(currentMarkdownReport()).toUtf8();
+    return file.write(content) == content.size();
+}
+
+bool BatchResultsWidget::writeCsvToFile(const QString& filePath) const
+{
+    if (filePath.isEmpty()) {
+        return false;
+    }
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        return false;
+    }
+
+    const QByteArray content = QString::fromStdString(currentCsvReport()).toUtf8();
+    return file.write(content) == content.size();
 }
 
 } // namespace gts
