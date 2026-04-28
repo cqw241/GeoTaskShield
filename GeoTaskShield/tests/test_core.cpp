@@ -417,6 +417,14 @@ int main()
     resultModel.setPrivacyFilter("Grid Privacy");
     require(resultModel.filteredRecords().size() == 2,
             "BatchResultModel should filter by privacy.");
+    const std::string filteredCsv = resultModel.csvReport();
+    require(contains(filteredCsv,
+                     "scenario,workers,tasks,grid_size,k,epsilon,privacy,algorithm"),
+            "BatchResultModel should export filtered results with the batch CSV header.");
+    require(contains(filteredCsv, "s1,10,5,10,3,1,Grid Privacy,Nearest Greedy"),
+            "BatchResultModel should export matching filtered rows.");
+    require(!contains(filteredCsv, "Laplace Noise Privacy"),
+            "BatchResultModel should exclude rows outside the active filter.");
     resultModel.setAlgorithmFilter("Hungarian");
     require(resultModel.filteredRecords().size() == 1 &&
                 resultModel.filteredRecords()[0].scenario == "s2",

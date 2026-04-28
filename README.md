@@ -3,6 +3,7 @@
 GeoTaskShield is a C++20/CMake simulator for privacy-preserving task allocation in mobile crowdsensing. It models workers and sensing tasks on a 2D map, applies location privacy mechanisms, runs task assignment algorithms, evaluates utility/privacy metrics, and presents results through console, CSV, Qt Widgets GUI, and a local experiment-report agent.
 
 Current release: `v0.7.0`. This release hardens the Phase 7 GUI batch-results visualization work.
+Current development: Phase 9 adds Markdown report preview/export and filtered CSV export entries to the GUI `Batch Results` tab.
 
 ## Current Status
 
@@ -39,6 +40,8 @@ Completed phases:
 - CSV export to `phase2_results.csv`.
 - Qt Widgets GUI with a Simulation tab and a Batch Results analysis tab.
 - Batch Results CSV loading, filters, summary cards, sortable table, and a lightweight self-drawn bar chart.
+- Batch Results filtered CSV export for the current loaded and filtered rows.
+- Batch Results Markdown report preview and export for the current loaded and filtered rows.
 - Local natural-language experiment agent.
 - Markdown experiment report generation.
 - Batch experiment runner.
@@ -150,7 +153,7 @@ out\build\x64-debug-qt\GeoTaskShield\GeoTaskShieldGui.exe
 The GUI contains:
 
 - `Simulation`: run a single simulation with parameter controls, map canvas, metrics, and logs.
-- `Batch Results`: open `phase5_batch_results.csv` or a same-structure CSV, filter by privacy/algorithm, select a metric, inspect summary cards, view a bar chart, and sort the detail table.
+- `Batch Results`: open `phase5_batch_results.csv` or a same-structure CSV, filter by privacy/algorithm, select a metric, inspect summary cards, view a bar chart, sort the detail table, export the filtered CSV rows, and preview or export a Markdown report for the current rows.
 
 ### Batch Results Demo
 
@@ -165,6 +168,9 @@ Demo flow:
 5. Filter by privacy mechanism or assignment algorithm.
 6. Select a metric such as `completionRate`, `privacyUtilityRatio`, `fairnessIndex`, or `averagePrivacyLoss`.
 7. Sort the table by clicking column headers and select rows to inspect details.
+8. Click `Export Filtered CSV` to save the current filtered rows as a `.csv` file.
+9. Click `Preview Markdown` to review the generated report.
+10. Click `Export Markdown` to save the report as a `.md` file.
 
 Example CSV header:
 

@@ -1,6 +1,7 @@
 #include "experiment/BatchResultModel.h"
 
 #include <algorithm>
+#include <iomanip>
 #include <sstream>
 
 namespace gts {
@@ -110,6 +111,24 @@ std::string chartLabel(const BatchResultRecord& record)
     return label.str();
 }
 
+std::string escapeCsv(const std::string& value)
+{
+    if (value.find_first_of(",\"\n") == std::string::npos) {
+        return value;
+    }
+
+    std::string escaped = "\"";
+    for (const char ch : value) {
+        if (ch == '"') {
+            escaped += "\"\"";
+        } else {
+            escaped += ch;
+        }
+    }
+    escaped += '"';
+    return escaped;
+}
+
 } // namespace
 
 void BatchResultModel::setRecords(std::vector<BatchResultRecord> records)
@@ -203,6 +222,87 @@ std::vector<ChartBar> BatchResultModel::chartBars(BatchResultMetric metric) cons
         bars.push_back(ChartBar{chartLabel(record), metricValue(record, metric)});
     }
     return bars;
+}
+
+std::string BatchResultModel::markdownReport() const
+{
+    const std::vector<BatchResultRecord> records = filteredRecords();
+
+    std::ostringstream output;
+    output << std::fixed << std::setprecision(2);
+    output << "# GeoTaskShield Batch Results Report\n\n";
+
+    if (records.empty()) {
+        output << "No batch results are available for the current filters.\n";
+        return output.str();
+    }
+
+    output << "| Scenario | Workers | Tasks | Privacy | Algorithm | Completion | "
+              "Avg Distance | Reward | Privacy Loss | Fairness | Timeout |\n";
+    output << "|---|---:|---:|---|---|---:|---:|---:|---:|---:|---:|\n";
+
+    const BatchResultRecord* bestRow = nullptr;
+    for (const BatchResultRecord& record : records) {
+        if (!bestRow || record.privacyUtilityRatio > bestRow->privacyUtilityRatio) {
+            bestRow = &record;
+        }
+
+        output << "| " << record.scenario
+               << " | " << record.workerCount
+               << " | " << record.taskCount
+               << " | " << record.privacy
+               << " | " << record.algorithm
+               << " | " << record.completionRate * 100.0 << "%"
+               << " | " << record.averageTrueDistance
+               << " | " << record.totalReward
+               << " | " << record.averagePrivacyLoss
+               << " | " << record.fairnessIndex
+               << " | " << record.timeoutRate * 100.0 << "%"
+               << " |\n";
+    }
+
+    output << "\n## Summary\n\n";
+    output << "Rows included: " << records.size() << ".\n";
+    if (bestRow) {
+        output << "Best privacy-utility ratio: " << bestRow->scenario
+               << " (" << bestRow->privacy << " + " << bestRow->algorithm
+               << ") at " << bestRow->privacyUtilityRatio << ".\n";
+    }
+
+    return output.str();
+}
+
+std::string BatchResultModel::csvReport() const
+{
+    std::ostringstream output;
+    output << "scenario,workers,tasks,grid_size,k,epsilon,privacy,algorithm,"
+              "completed_tasks,total_tasks,completion_rate,average_moving_distance,"
+              "total_reward,average_privacy_loss,algorithm_runtime_ms,user_load_stddev,"
+              "fairness_index,privacy_utility_ratio,timeout_rate\n";
+
+    for (const BatchResultRecord& record : filteredRecords()) {
+        output << escapeCsv(record.scenario) << ','
+               << record.workerCount << ','
+               << record.taskCount << ','
+               << record.gridSize << ','
+               << record.k << ','
+               << record.epsilon << ','
+               << escapeCsv(record.privacy) << ','
+               << escapeCsv(record.algorithm) << ','
+               << record.completedTasks << ','
+               << record.totalTasks << ','
+               << record.completionRate << ','
+               << record.averageTrueDistance << ','
+               << record.totalReward << ','
+               << record.averagePrivacyLoss << ','
+               << record.runtimeMs << ','
+               << record.userLoadStdDev << ','
+               << record.fairnessIndex << ','
+               << record.privacyUtilityRatio << ','
+               << record.timeoutRate << '\n';
+    }
+
+    return output.str();
 }
 
 } // namespace gts

@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Phase 9 GUI Markdown preview and export entries for `Batch Results`.
+- Phase 9 GUI filtered CSV export entry for `Batch Results`.
+- Qt-free Markdown report generation for currently filtered batch result rows.
+- Qt-free CSV generation for currently filtered batch result rows.
+
 ## v0.7.0 - 2026-04-28
 
 ### Added
