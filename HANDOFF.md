@@ -2,8 +2,8 @@
 
 更新时间：2026-04-28
 项目路径：`D:\VS2026_Projects\GeoTaskShield`
-当前状态：阶段 1 至阶段 11 已完成并通过本地验收。阶段 12 已在 `feature/phase12-real-llm-provider` 上实现可选真实 LLM provider，当前发布版本仍为 `v0.8.0`。
-当前开发分支：`feature/phase12-real-llm-provider`
+当前状态：阶段 1 至阶段 12 已完成并通过本地验收。Demo Readiness 正在 `release/v0.9.0` 上固化为 `v0.9.0` 发布包，不新增功能。
+当前开发分支：`release/v0.9.0`
 
 ---
 
@@ -39,7 +39,7 @@ GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配
 | 分支 | 说明 |
 |---|---|
 | `main` | `v0.8.0` 发布分支，远端默认分支 |
-| `develop` | 已回合 `v0.8.0` 发布整理结果 |
+| `develop` | 已回合 Phase 12 可选 LLM provider 结果 |
 | `feature/phase3-qt-gui` | 阶段 3 功能分支，提交 `3b66cbf feat(gui): add Qt Widgets simulation UI` |
 | `feature/phase4-ai-agent-report` | 阶段 4 功能分支 |
 | `feature/phase5-experiment-enhancements` | 阶段 5 功能分支，已合入 `develop` |
@@ -49,6 +49,7 @@ GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配
 | `release/phase6-engineering-release` | 阶段 6 发布准备分支 |
 | `release/v0.7.0` | 阶段 8 / `v0.7.0` 发布准备分支 |
 | `release/v0.8.0` | 阶段 10 / `v0.8.0` 发布准备分支 |
+| `release/v0.9.0` | Demo Readiness / `v0.9.0` 发布准备分支 |
 
 后续 Git 操作要求：
 
@@ -689,6 +690,32 @@ GeoTaskShield/gui/
 
 ---
 
+## 14.6. Demo Readiness / v0.9.0 Release Hardening
+
+目标：把 Phase 11/12 的智能实验助手能力固化为可演示、可打包的 `v0.9.0`，不继续扩展异步调用、超时控制、复杂错误提示、Qt Graphs 或 GoogleTest 迁移。
+
+本轮发布范围：
+
+- 项目版本更新为 `0.9.0`。
+- Windows 打包默认版本更新为 `v0.9.0`。
+- 新增 `docs/demo/v0.9.0-gui-demo-guide.md`，覆盖：
+  - `Simulation` tab 默认仿真；
+  - `Batch Results` 加载 `phase5_batch_results.csv`、筛选、排序、导出 CSV、预览/导出 Markdown；
+  - `Agent Assistant` 默认 `Local rule-based` 分析和导出 Markdown；
+  - `Aliyun Bailian (DashScope)` provider 仅作为可选入口和环境变量说明，不作为主演示依赖。
+- GUI smoke test 增强为直接加载仓库根目录的 `phase5_batch_results.csv` 并验证导出路径。
+- 发布包继续包含 demo CSV、batch report、README/HANDOFF/CHANGELOG 和 `docs/demo`。
+
+保持不变：
+
+- 不新增算法；
+- 不改 `SimulationEngine`、`PrivacyFactory`、`AssignmentAlgorithmFactory` 或 `BatchExperiment` 语义；
+- 不新增 Qt Graphs；
+- 不迁移 GoogleTest；
+- 不把 API key 写入仓库。
+
+---
+
 ## 15. 构建与验收方式
 
 推荐在 Visual Studio Developer Command Prompt 或通过 `VsDevCmd.bat` 加载 MSVC 环境后执行。
@@ -774,7 +801,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package_windows.ps1
 默认输出：
 
 ```text
-out\package\GeoTaskShield-v0.8.0-windows-x64.zip
+out\package\GeoTaskShield-v0.9.0-windows-x64.zip
 ```
 
 打包输出位于 `out/`，属于生成产物，不提交进 Git。

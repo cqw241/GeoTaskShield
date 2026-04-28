@@ -1,10 +1,20 @@
-# Task Plan: GeoTaskShield Phase 12 - Real LLM Provider
+# Task Plan: GeoTaskShield Demo Readiness - v0.9.0
 
 ## Goal
-Extend the Phase 11 intelligent experiment assistant with an optional real LLM provider while keeping the default assistant offline, Qt-free outside `gui`, and free of committed API keys.
+Prepare GeoTaskShield `v0.9.0` as a demo-ready release package after Phase 12, without adding new runtime features.
 
 ## Current Phase
-Phase 12 implementation complete on `feature/phase12-real-llm-provider`; ready for integration into `develop`
+Demo Readiness in progress on `release/v0.9.0`
+
+## Demo Readiness Success Criteria
+- Work happens on `release/v0.9.0`.
+- Do not add asynchronous LLM calls, timeout controls, complex error UX, Qt Graphs, GoogleTest migration, or new algorithms.
+- Verify non-Qt Debug build and core tests.
+- Verify Qt Debug build and GUI smoke test.
+- Verify demo workflow: Simulation default run, Batch Results demo CSV load/filter/sort/export/Markdown, Agent Assistant local rule-based analysis/export, and DashScope provider entry/config documentation.
+- Update project version, README, HANDOFF, CHANGELOG, demo guide, package script, and planning files for `v0.9.0`.
+- Generate and inspect a runnable Windows release package.
+- Ensure the provided DashScope API key is not present in repository files or package contents.
 
 ## Phase 12 Success Criteria
 - Work happens on `feature/phase12-real-llm-provider`.
@@ -362,6 +372,28 @@ Phase 12 implementation complete on `feature/phase12-real-llm-provider`; ready f
 - [x] Configure the user's local DashScope environment variables
 - **Status:** complete
 
+### Phase 39: Demo Readiness Verification
+- [x] Create `release/v0.9.0` from `develop`
+- [x] Run non-Qt Debug build and core tests
+- [x] Run Qt Debug build and GUI smoke test
+- [x] Strengthen GUI smoke coverage for real `phase5_batch_results.csv`
+- **Status:** complete
+
+### Phase 40: v0.9.0 Release Hardening
+- [x] Update CMake project version to `0.9.0`
+- [x] Update Windows package default to `v0.9.0`
+- [x] Update README, HANDOFF, and CHANGELOG
+- [x] Add `docs/demo/v0.9.0-gui-demo-guide.md`
+- **Status:** complete
+
+### Phase 41: Package and Final Checks
+- [x] Run Qt Release build
+- [x] Generate Windows package
+- [x] Inspect package contents
+- [x] Run diff and secret checks
+- [x] Commit release hardening
+- **Status:** complete
+
 ## Key Questions
 1. Should Hungarian matching support tasks requiring multiple workers in Phase 2?
    - Decision: no. Phase 2 implements one-worker-per-task matching and leaves multi-worker assignment for a later extension.
@@ -388,6 +420,7 @@ Phase 12 implementation complete on `feature/phase12-real-llm-provider`; ready f
 | Phase 12 keeps real LLM usage optional | The existing offline assistant remains usable without network access or credentials. |
 | Phase 12 reads provider credentials from environment variables only | This satisfies the user's real-provider request without storing secrets in the repository. |
 | Phase 12 tests use fake HTTP transport | Core behavior can be verified without network dependency or a real API key. |
+| `v0.9.0` is release hardening only | The user explicitly asked not to continue async calls, timeout controls, complex errors, Qt Graphs, or GoogleTest migration. |
 
 ## Errors Encountered
 | Error | Attempt | Resolution |

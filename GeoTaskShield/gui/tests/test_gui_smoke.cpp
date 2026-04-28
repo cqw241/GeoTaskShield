@@ -30,6 +30,11 @@ std::string writeTempCsv(const std::string& name, const std::string& content)
     return path.string();
 }
 
+std::filesystem::path repositoryRoot()
+{
+    return std::filesystem::path(__FILE__).parent_path().parent_path().parent_path().parent_path();
+}
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -106,6 +111,30 @@ int main(int argc, char** argv)
     require(exportedCsv.find("scenario,workers,tasks,grid_size,k,epsilon") !=
                 std::string::npos,
             "Exported filtered CSV should contain the batch CSV header.");
+
+    const std::filesystem::path demoCsvPath =
+        repositoryRoot() / "phase5_batch_results.csv";
+    require(std::filesystem::exists(demoCsvPath),
+            "Demo CSV phase5_batch_results.csv should exist at the repository root.");
+    require(batchWidget->loadCsvFile(QString::fromStdString(demoCsvPath.string())),
+            "BatchResultsWidget should load the demo phase5_batch_results.csv file.");
+    require(batchWidget->visibleRowCountForTesting() > 0,
+            "BatchResultsWidget should show rows from phase5_batch_results.csv.");
+    batchWidget->sortByColumnForTesting("privacyUtilityRatio", Qt::DescendingOrder);
+    require(!batchWidget->firstScenarioForTesting().isEmpty(),
+            "BatchResultsWidget should keep a visible scenario after sorting demo data.");
+    const QString demoMarkdown = batchWidget->markdownReportForTesting();
+    require(demoMarkdown.contains("# GeoTaskShield Batch Results Report") &&
+                demoMarkdown.contains("Best privacy-utility ratio"),
+            "BatchResultsWidget should preview Markdown from phase5_batch_results.csv.");
+    const std::string demoMarkdownPath =
+        (std::filesystem::temp_directory_path() / "gts_v090_demo_report.md").string();
+    require(batchWidget->exportMarkdownForTesting(QString::fromStdString(demoMarkdownPath)),
+            "BatchResultsWidget should export Markdown for phase5_batch_results.csv.");
+    const std::string demoCsvExportPath =
+        (std::filesystem::temp_directory_path() / "gts_v090_demo_filtered.csv").string();
+    require(batchWidget->exportFilteredCsvForTesting(QString::fromStdString(demoCsvExportPath)),
+            "BatchResultsWidget should export filtered CSV for phase5_batch_results.csv.");
 
     auto* assistantWidget = window.findChild<gts::AgentAssistantWidget*>();
     require(assistantWidget != nullptr,
