@@ -14,7 +14,7 @@ Completed phases:
 - Phase 4: Local rule-based AIAgent and Markdown experiment report generation.
 - Phase 5: Batch experiment support, additional metrics, and richer CSV/Markdown export.
 - Phase 6: Engineering cleanup, release packaging, style rules, and `v0.6.0` release preparation.
-- Phase 7: GUI batch CSV result analysis and visualization.
+- Phase 7: GUI batch CSV result analysis and visualization, merged into `develop`.
 
 ## Features
 

@@ -2,8 +2,8 @@
 
 更新时间：2026-04-27
 项目路径：`D:\VS2026_Projects\GeoTaskShield`
-当前状态：阶段 1、阶段 2、阶段 3、阶段 4、阶段 5、阶段 6 已完成并通过验收。阶段 7 已在功能分支实现并通过本地验收。当前发布版本：`v0.6.0`。
-当前开发分支：`feature/phase7-gui-batch-results`
+当前状态：阶段 1、阶段 2、阶段 3、阶段 4、阶段 5、阶段 6 已完成并通过验收。阶段 7 已完成、本地合入 `develop`，并同步到 GitHub。当前发布版本：`v0.6.0`。
+当前开发分支：`develop`
 
 ---
 
@@ -34,10 +34,11 @@ GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配
 | 分支 | 说明 |
 |---|---|
 | `main` | `v0.6.0` 发布分支，远端默认分支 |
-| `develop` | 已回合 `v0.6.0` 发布整理结果 |
+| `develop` | 已回合 `v0.6.0` 发布整理结果，并已合入阶段 7 GUI 批量结果分析功能 |
 | `feature/phase3-qt-gui` | 阶段 3 功能分支，提交 `3b66cbf feat(gui): add Qt Widgets simulation UI` |
 | `feature/phase4-ai-agent-report` | 阶段 4 功能分支 |
 | `feature/phase5-experiment-enhancements` | 阶段 5 功能分支，已合入 `develop` |
+| `feature/phase7-gui-batch-results` | 阶段 7 功能分支，已本地合入 `develop` |
 | `release/phase6-engineering-release` | 阶段 6 发布准备分支 |
 
 后续 Git 操作要求：
