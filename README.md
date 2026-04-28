@@ -54,24 +54,24 @@ GeoTaskShield 当前支持：
 
 - 生成模拟 worker 和 sensing task。
 - 对 worker 位置进行隐私保护：
-  - Grid Privacy
-  - K-Anonymity Privacy
-  - Laplace Noise Privacy
+  - Grid Privacy（网格隐私）
+  - K-Anonymity Privacy（K 匿名隐私）
+  - Laplace Noise Privacy（拉普拉斯噪声隐私）
 - 使用不同任务分配算法完成匹配：
-  - Nearest Greedy
-  - Score Greedy
-  - Hungarian
+  - Nearest Greedy（最近邻贪心算法）
+  - Score Greedy（评分贪心算法）
+  - Hungarian（匈牙利算法）
 - 计算实验指标：
-  - completed task count
-  - completion rate
-  - average true moving distance
-  - total reward
-  - average privacy loss
-  - algorithm runtime
-  - worker load standard deviation
-  - Jain fairness index
-  - privacy-utility ratio
-  - timeout rate
+  - completed task count（已完成任务数）
+  - completion rate（任务完成率）
+  - average true moving distance（平均真实移动距离）
+  - total reward（总收益）
+  - average privacy loss（平均隐私损失）
+  - algorithm runtime（算法运行时间）
+  - worker load standard deviation（工作者负载标准差）
+  - Jain fairness index（Jain 公平性指数）
+  - privacy-utility ratio（隐私-效用比）
+  - timeout rate（超时率）
 - 运行控制台 3 x 3 隐私机制/分配算法对比实验。
 - 导出控制台实验 CSV：`phase2_results.csv`。
 - 运行批量实验并导出：
