@@ -2,8 +2,8 @@
 
 更新时间：2026-04-27
 项目路径：`D:\VS2026_Projects\GeoTaskShield`
-当前状态：阶段 1、阶段 2、阶段 3、阶段 4、阶段 5 已完成并通过验收。阶段 6 尚未开始。
-当前开发分支：`feature/phase5-experiment-enhancements`
+当前状态：阶段 1、阶段 2、阶段 3、阶段 4、阶段 5、阶段 6 已完成并通过验收。当前发布版本：`v0.6.0`。
+当前开发分支：`develop`
 
 ---
 
@@ -33,11 +33,12 @@ GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配
 
 | 分支 | 说明 |
 |---|---|
-| `main` | 已发布阶段 4 项目状态，远端默认分支 |
-| `develop` | 已合入阶段 4，并同步 GitHub 发布记录 |
+| `main` | `v0.6.0` 发布分支，远端默认分支 |
+| `develop` | 已回合 `v0.6.0` 发布整理结果 |
 | `feature/phase3-qt-gui` | 阶段 3 功能分支，提交 `3b66cbf feat(gui): add Qt Widgets simulation UI` |
 | `feature/phase4-ai-agent-report` | 阶段 4 功能分支 |
-| `feature/phase5-experiment-enhancements` | 当前阶段 5 功能分支 |
+| `feature/phase5-experiment-enhancements` | 阶段 5 功能分支，已合入 `develop` |
+| `release/phase6-engineering-release` | 阶段 6 发布准备分支 |
 
 后续 Git 操作要求：
 
@@ -390,6 +391,28 @@ Qt 相关注意：
 - 如果换机器，需要修改 `CMAKE_PREFIX_PATH`；
 - 构建时可能提示 `Could NOT find WrapVulkanHeaders`，当前 Widgets GUI 不依赖 Vulkan，已验证不影响构建和测试。
 
+### 8.5 Release 构建与 Windows 打包
+
+Release Qt 构建：
+
+```powershell
+cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 && cmake --preset x64-release-qt && cmake --build out\build\x64-release-qt'
+```
+
+Windows ZIP 打包：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\package_windows.ps1
+```
+
+默认输出：
+
+```text
+out\package\GeoTaskShield-v0.6.0-windows-x64.zip
+```
+
+打包输出位于 `out/`，属于生成产物，不提交进 Git。
+
 ---
 
 ## 9. 当前设计约束与注意事项
@@ -423,9 +446,11 @@ Qt 相关注意：
    - 通过现有工厂和 `SimulationEngine` 执行；
    - CSV 包含算法运行耗时，重复运行时该列可能有轻微波动。
 
-7. `GeoTaskShield.cpp` 和 `GeoTaskShield.h` 仍保留在目录中，但当前 CMake 不使用它们作为入口。
+7. 旧 Visual Studio 模板入口 `GeoTaskShield.cpp` 和 `GeoTaskShield.h` 已在阶段 6 删除，当前入口统一位于 `GeoTaskShield/app/*/main.cpp`。
 
-8. MSVC 构建已给 `GeoTaskShieldCore` 增加 `/utf-8`，用于稳定支持中文 prompt 测试和 demo 字符串。
+8. MSVC 构建已给项目目标增加 `/utf-8`，用于稳定支持中文 prompt 测试和 demo 字符串。
+
+9. 阶段 6 增加 `.clang-format` 作为 C++ 格式约束，并给 MSVC 目标增加 `/W4` 警告等级。
 
 ---
 
@@ -489,36 +514,49 @@ phase5_batch_report.md
 
 目标：形成更标准的 C++/Qt 项目交付形态。
 
-建议任务：
+已完成内容：
 
 1. 整理 README：
    - 项目介绍；
    - 构建说明；
-   - 运行截图；
+   - Release 构建与打包说明；
    - 模块说明。
 2. 清理旧入口：
-   - 评估是否删除或迁移 `GeoTaskShield.cpp` / `GeoTaskShield.h`。
+   - 删除未被 CMake 使用的 `GeoTaskShield.cpp` / `GeoTaskShield.h`。
 3. 增加代码风格约束：
-   - 命名规范；
-   - clang-format；
-   - 编译警告级别。
+   - `.clang-format`；
+   - MSVC `/W4`；
+   - 非 MSVC `-Wall -Wextra -Wpedantic`。
 4. 增加安装/打包：
-   - Qt 部署；
-   - Windows 可执行程序打包。
+   - 新增 `x64-release-qt` preset；
+   - 新增 `scripts/package_windows.ps1`；
+   - 打包 console、agent demo、batch demo、Qt GUI、Qt runtime 和示例报告。
+5. 发布版本：
+   - 版本号：`v0.6.0`；
+   - 发布准备分支：`release/phase6-engineering-release`；
+   - 合入 `main`，打 tag，并回合到 `develop`。
+
+阶段 6 验收结果：
+
+- 非 Qt Debug 构建和核心测试通过；
+- Qt Debug 构建、GUI smoke test 通过；
+- Qt Release 构建和测试通过；
+- CMake install 规则通过；
+- Windows ZIP 打包脚本通过；
+- `v0.6.0` 发布包生成于 `out\package\GeoTaskShield-v0.6.0-windows-x64.zip`；
+- 发布包属于生成产物，不提交进 Git。
 
 ---
 
 ## 11. 建议下一步
 
-建议下一轮进入阶段 6：工程整理与发布。
+建议下一轮进入阶段 7：GUI 数据可视化增强。
 
-最低风险顺序：
+可选方向：
 
-1. 清理或迁移旧入口 `GeoTaskShield.cpp` / `GeoTaskShield.h`；
-2. 拆分当前单文件核心测试，或引入 GoogleTest/Catch2；
-3. 增加 `.clang-format` 和基础代码风格约束；
-4. 整理 README 截图、模块图和阶段 5 输出示例；
-5. 评估 Qt 部署脚本和 Windows 打包流程；
-6. 后续再考虑 Qt Charts 或 GUI 报告面板。
+1. 引入 Qt Charts 或自绘图表，展示完成率、隐私损失、公平性和隐私效用比；
+2. 在 GUI 中加载 `phase5_batch_results.csv` 并展示批量实验对比；
+3. 将 batch demo 的 Markdown 报告能力接入 GUI；
+4. 继续拆分核心测试，或评估引入 GoogleTest/Catch2。
 
-这一顺序优先降低工程交付风险，不需要先改动算法核心。
+阶段 7 建议仍保持核心算法不变，优先增强展示和报告能力。

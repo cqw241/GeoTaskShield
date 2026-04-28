@@ -2,6 +2,9 @@
 
 ## Requirements
 - Enter GeoTaskShield Phase 5: experiment capability enhancement.
+- Enter GeoTaskShield Phase 6: engineering cleanup and release.
+- Prepare a Git Flow release from the completed Phase 1-5 implementation.
+- Keep Phase 6 focused on engineering delivery, not new algorithm or GUI functionality.
 - Add batch experiments across multiple worker/task counts, epsilon values, k values, and grid sizes.
 - Add load balance, fairness, privacy-utility ratio, and timeout metrics.
 - Add CSV and Markdown batch export.
@@ -54,6 +57,9 @@
 | Phase 5 metrics should be computed in `MetricsCalculator` | Metrics already centralize assignment quality, and GUI/Agent can consume expanded `EvaluationMetrics` without new algorithm dependencies. |
 | Batch experiments should use existing factories and `SimulationEngine` | This keeps batch execution aligned with console, GUI, and Agent behavior. |
 | Batch export should live in a new `experiment` module | The existing `CsvExporter` is a Phase 2 summary exporter; batch rows need scenario configuration fields and Markdown export. |
+| Phase 6 should use `release/phase6-engineering-release` | The task is release preparation, and `git_guide.md` includes `release/*` for this purpose. |
+| Phase 6 should tag `v0.6.0` after verification | There are no existing tags, and the phase number gives a clear first release identifier. |
+| Packaging should be script-based and generated under `out/package` | This keeps Qt DLLs and ZIP artifacts out of Git while making local delivery repeatable. |
 
 ## Issues Encountered
 | Issue | Resolution |
@@ -66,6 +72,7 @@
 | Phase 3 was complete on a feature branch | Merged it into `develop`, then created `feature/phase4-ai-agent-report` for Phase 4 per Git Flow. |
 | Secret scan found no committed API key text | Searched project files excluding `.git`, `out`, and `.vs`; no provided key string was found. |
 | Phase 5 started from `develop` after syncing `main` publish notes | Merged `main` into `develop`, then created `feature/phase5-experiment-enhancements`. |
+| Phase 6 started after Phase 5 feature completion | Merged `feature/phase5-experiment-enhancements` into `develop`, then created `release/phase6-engineering-release`. |
 
 ## Resources
 - Project specification: `D:\VS2026_Projects\GeoTaskShield\GeoTaskShield.md`
