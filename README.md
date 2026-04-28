@@ -282,11 +282,9 @@ Compare privacy mechanisms for 50 tasks and explain completion rate, privacy uti
 docs/demo/v0.9.0-gui-demo-guide.md
 ```
 
-### Optional LLM provider (Phase 12)
+### 可选 LLM provider（Phase 12）
 
-`Agent Assistant` defaults to `Local rule-based`, so the GUI still works without
-network access or credentials. To use Aliyun Bailian / DashScope, select
-`Aliyun Bailian (DashScope)` in the provider selector and configure:
+`Agent Assistant` 默认使用 `Local rule-based`，因此 GUI 在没有网络访问、没有凭据的情况下仍可正常工作。如需使用阿里云百炼 / DashScope，在 provider 下拉框中选择 `Aliyun Bailian (DashScope)`，并在启动程序前配置以下环境变量：
 
 ```powershell
 $env:DASHSCOPE_API_KEY = "<your DashScope API key>"
@@ -294,10 +292,7 @@ $env:DASHSCOPE_MODEL = "kimi-k2.5"
 $env:DASHSCOPE_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 ```
 
-`DASHSCOPE_API_KEY` is required for the real provider. `DASHSCOPE_MODEL`
-defaults to `kimi-k2.5`, and `DASHSCOPE_BASE_URL` defaults to the Beijing
-OpenAI-compatible endpoint. API keys must stay in the local environment and must
-not be written into source, docs, tests, reports, or commits.
+真实 provider 必须配置 `DASHSCOPE_API_KEY`。`DASHSCOPE_MODEL` 默认使用 `kimi-k2.5`，`DASHSCOPE_BASE_URL` 默认使用 DashScope 的 OpenAI-compatible endpoint。API key 必须只保存在本机运行环境变量中，不得写入源码、文档、测试、报告或提交记录。
 
 ## 示例自然语言 Agent 输入
 
