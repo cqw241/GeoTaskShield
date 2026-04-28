@@ -691,27 +691,6 @@ GeoTaskShield/gui/
 
 ---
 
-## 14.7. Phase 13: Agent Provider Hardening
-
-目标：在不改变核心仿真、隐私机制、分配算法、批量实验语义且不保存 API key 的前提下，让可选真实 LLM provider 更适合真实 GUI 使用。
-
-当前实现范围：
-
-- `HttpRequest` 增加 `timeoutMs`，`OpenAICompatibleAssistant` 通过 `DASHSCOPE_TIMEOUT_MS` 或默认配置传递 provider 请求超时。
-- `WinHttpClient` 在发送请求前应用 WinHTTP 超时设置。
-- `OpenAICompatibleAssistant` 保持先运行本地 `RuleBasedAssistant`，provider 缺少密钥、请求失败、超时、空内容或非预期响应时返回本地分析 fallback。
-- GUI `Agent Assistant` 的 DashScope provider 路径改为后台线程执行，避免真实网络请求阻塞 Qt UI。
-- GUI 新增 provider 状态文本；运行中禁用 provider 选择和 Analyze 按钮，完成后显示成功或 unavailable/fallback 状态。
-- 自动化测试仍使用 fake HTTP transport 和缺 key fallback，不依赖真实 API key 或网络访问。
-
-保持不变：
-
-- `Local rule-based` 仍是默认 provider。
-- 不新增算法，不修改 `SimulationEngine`、`PrivacyFactory`、`AssignmentAlgorithmFactory` 或 `BatchExperiment`。
-- API key 只允许来自运行时环境变量，不写入源码、文档、测试、报告或提交历史。
-
----
-
 ## 14.6. Demo Readiness / v0.9.0 Release Hardening
 
 目标：把 Phase 11/12 的智能实验助手能力固化为可演示、可打包的 `v0.9.0`，不继续扩展异步调用、超时控制、复杂错误提示、Qt Graphs 或 GoogleTest 迁移。
@@ -735,6 +714,27 @@ GeoTaskShield/gui/
 - 不新增 Qt Graphs；
 - 不迁移 GoogleTest；
 - 不把 API key 写入仓库。
+
+---
+
+## 14.7. Phase 13: Agent Provider Hardening
+
+目标：在不改变核心仿真、隐私机制、分配算法、批量实验语义且不保存 API key 的前提下，让可选真实 LLM provider 更适合真实 GUI 使用。
+
+当前实现范围：
+
+- `HttpRequest` 增加 `timeoutMs`，`OpenAICompatibleAssistant` 通过 `DASHSCOPE_TIMEOUT_MS` 或默认配置传递 provider 请求超时。
+- `WinHttpClient` 在发送请求前应用 WinHTTP 超时设置。
+- `OpenAICompatibleAssistant` 保持先运行本地 `RuleBasedAssistant`，provider 缺少密钥、请求失败、超时、空内容或非预期响应时返回本地分析 fallback。
+- GUI `Agent Assistant` 的 DashScope provider 路径改为后台线程执行，避免真实网络请求阻塞 Qt UI。
+- GUI 新增 provider 状态文本；运行中禁用 provider 选择和 Analyze 按钮，完成后显示成功或 unavailable/fallback 状态。
+- 自动化测试仍使用 fake HTTP transport 和缺 key fallback，不依赖真实 API key 或网络访问。
+
+保持不变：
+
+- `Local rule-based` 仍是默认 provider。
+- 不新增算法，不修改 `SimulationEngine`、`PrivacyFactory`、`AssignmentAlgorithmFactory` 或 `BatchExperiment`。
+- API key 只允许来自运行时环境变量，不写入源码、文档、测试、报告或提交历史。
 
 ---
 
