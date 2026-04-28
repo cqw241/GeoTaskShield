@@ -1,7 +1,7 @@
 # GeoTaskShield
 
 面向移动群智感知的隐私保护任务分配仿真与可视化系统
-当前版本：`v0.9.0`
+当前版本：`v0.10.0`
 
 ## 摘要
 
@@ -160,9 +160,9 @@ flowchart LR
 
 ## 当前发布版本
 
-当前 release：`v0.9.0`
+当前 release：`v0.10.0`
 
-`v0.9.0` 固化了 Phase 11/12 的智能实验助手和可选真实 LLM provider 能力：
+`v0.10.0` 固化了 Phase 13 的真实 LLM provider 产品化体验：
 
 - `Batch Results` 当前筛选 CSV 导出。
 - Markdown 报告预览。
@@ -170,12 +170,12 @@ flowchart LR
 - `Agent Assistant` 本地规则分析、Markdown 预览和导出。
 - 可选 Aliyun Bailian / DashScope provider，默认不作为主演示依赖，并支持超时配置、失败回退和 GUI 非阻塞分析。
 - Qt-free 批量结果 CSV/Markdown 字符串生成。
-- v0.9.0 GUI 演示指南。
+- v0.10.0 GUI 演示指南。
 
 发布包默认输出：
 
 ```text
-out/package/GeoTaskShield-v0.9.0-windows-x64.zip
+out/package/GeoTaskShield-v0.10.0-windows-x64.zip
 ```
 
 ## 构建环境
@@ -237,7 +237,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package_windows.ps1
 打包输出：
 
 ```text
-out/package/GeoTaskShield-v0.9.0-windows-x64.zip
+out/package/GeoTaskShield-v0.10.0-windows-x64.zip
 ```
 
 ## GUI 演示流程
@@ -279,7 +279,7 @@ Compare privacy mechanisms for 50 tasks and explain completion rate, privacy uti
 详细演示脚本见：
 
 ```text
-docs/demo/v0.9.0-gui-demo-guide.md
+docs/demo/v0.10.0-gui-demo-guide.md
 ```
 
 ### 可选 LLM provider（Phase 12）
@@ -325,6 +325,7 @@ $env:DASHSCOPE_TIMEOUT_MS = "15000"
 | Phase 12 | Optional OpenAI-compatible LLM provider for Agent Assistant, default-off and environment-variable configured |
 | Phase 13 | Agent provider hardening: timeout configuration, fallback handling, and non-blocking GUI provider analysis |
 | Demo Readiness | `v0.9.0` Release hardening, demo guide, package verification |
+| v0.10.0 Release | Phase 13 provider hardening release package and demo guide |
 
 ## 当前限制
 

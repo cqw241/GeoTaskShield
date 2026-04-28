@@ -2,8 +2,8 @@
 
 更新时间：2026-04-28
 项目路径：`D:\VS2026_Projects\GeoTaskShield`
-当前状态：阶段 1 至阶段 12 已完成并通过本地验收，Demo Readiness 已固化为 `v0.9.0` 发布包。Phase 13 正在强化真实 LLM provider 的超时、错误回退和 GUI 非阻塞体验。
-当前开发分支：`feature/phase13-agent-provider-hardening`
+当前状态：阶段 1 至阶段 13 已完成并通过本地验收。`v0.10.0` Release Hardening 正在 `release/v0.10.0` 上固化 Phase 13 的真实 LLM provider 产品化体验。
+当前开发分支：`release/v0.10.0`
 
 ---
 
@@ -50,6 +50,7 @@ GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配
 | `release/v0.7.0` | 阶段 8 / `v0.7.0` 发布准备分支 |
 | `release/v0.8.0` | 阶段 10 / `v0.8.0` 发布准备分支 |
 | `release/v0.9.0` | Demo Readiness / `v0.9.0` 发布准备分支，已完成 |
+| `release/v0.10.0` | Phase 13 provider hardening / `v0.10.0` 发布准备分支 |
 
 后续 Git 操作要求：
 
@@ -738,6 +739,31 @@ GeoTaskShield/gui/
 
 ---
 
+## 14.8. v0.10.0 Release Hardening
+
+目标：把 Phase 13 的真实 LLM provider 产品化体验固化为可演示、可打包的 `v0.10.0` 发布包，不新增运行时功能。
+
+本轮发布范围：
+
+- 项目版本更新为 `0.10.0`。
+- Windows 打包默认版本更新为 `v0.10.0`。
+- 新增 `docs/demo/v0.10.0-gui-demo-guide.md`，覆盖：
+  - `Simulation` tab 默认仿真；
+  - `Batch Results` 加载 `phase5_batch_results.csv`、筛选、排序、导出 CSV、预览/导出 Markdown；
+  - `Agent Assistant` 默认 `Local rule-based` 分析和导出 Markdown；
+  - `Aliyun Bailian (DashScope)` provider 的后台分析、超时配置、缺 key fallback 和状态提示；
+  - API key 只通过运行时环境变量配置，不写入仓库。
+- 发布包继续包含 demo CSV、batch report、README/HANDOFF/CHANGELOG 和 `docs/demo`。
+
+保持不变：
+
+- 不新增算法；
+- 不改 `SimulationEngine`、`PrivacyFactory`、`AssignmentAlgorithmFactory` 或 `BatchExperiment` 语义；
+- 不迁移 GoogleTest；
+- 不把 API key 写入仓库。
+
+---
+
 ## 15. 构建与验收方式
 
 推荐在 Visual Studio Developer Command Prompt 或通过 `VsDevCmd.bat` 加载 MSVC 环境后执行。
@@ -823,7 +849,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package_windows.ps1
 默认输出：
 
 ```text
-out\package\GeoTaskShield-v0.9.0-windows-x64.zip
+out\package\GeoTaskShield-v0.10.0-windows-x64.zip
 ```
 
 打包输出位于 `out/`，属于生成产物，不提交进 Git。
@@ -876,4 +902,4 @@ Phase 13 稳定后可继续考虑：
 1. 拆分当前较大的 `GeoTaskShield/tests/test_core.cpp`，或评估是否迁移到 GoogleTest/Catch2；
 2. 支持多轮实验助手上下文和更细粒度的实验参数建议；
 3. 扩展更多隐私保护机制和任务分配算法；
-4. 如后续需要论文级图表或复杂交互分析，再评估 Qt Graphs / Qt Charts；当前自绘柱状图足够支撑 `v0.9.0` 演示。
+4. 如后续需要论文级图表或复杂交互分析，再评估 Qt Graphs / Qt Charts；当前自绘柱状图足够支撑 `v0.10.0` 演示。
