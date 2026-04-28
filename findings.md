@@ -1,6 +1,12 @@
 # Findings & Decisions
 
 ## Requirements
+- Enter Demo Readiness after Phase 12.
+- Do not continue asynchronous LLM calls, timeout controls, complex error UX, Qt Graphs, or GoogleTest migration.
+- Verify non-Qt Debug build/core tests and Qt Debug build/GUI smoke tests.
+- Verify demo workflow for Simulation, Batch Results, Agent Assistant local provider, and optional DashScope entry/config docs.
+- Prepare `v0.9.0` release hardening by updating version, README, HANDOFF, CHANGELOG, demo guide, and package script.
+- Generate or confirm a runnable release package.
 - Enter GeoTaskShield Phase 12: extend `IExperimentAssistant` with an optional real LLM provider.
 - Keep the existing offline rule-based assistant as the default.
 - Support an Aliyun Bailian / DashScope provider using environment variables for secrets and model selection.
@@ -45,6 +51,9 @@
 - Preserve the Phase 1 console MVP and make Phase 2 verifiable.
 
 ## Research Findings
+- Current branch for Demo Readiness is `release/v0.9.0`.
+- `v0.9.0` release hardening is scoped to packaging, documentation, demo workflow verification, and smoke-test coverage for the real demo CSV.
+- Existing package script already includes `docs/demo`, `phase5_batch_results.csv`, and `phase5_batch_report.md`; updating its default version is sufficient for package naming.
 - Current branch for Phase 12 is `feature/phase12-real-llm-provider`.
 - Official Aliyun Bailian / Model Studio documentation describes an OpenAI-compatible Chat Completions endpoint.
 - Beijing region default base URL is `https://dashscope.aliyuncs.com/compatible-mode/v1`; HTTP requests post to `/chat/completions`.
@@ -86,6 +95,8 @@
 | Phase 12 should add a real provider behind `IExperimentAssistant` instead of changing core assistant callers | The existing GUI and tests can preserve local behavior while exposing optional online analysis. |
 | Phase 12 should use an injectable HTTP client | Automated tests must remain hermetic and must not depend on network access or real credentials. |
 | DashScope provider configuration should use `DASHSCOPE_API_KEY`, `DASHSCOPE_MODEL`, and optional `DASHSCOPE_BASE_URL` | These names match official examples for the key and keep model/base URL runtime-configurable. |
+| Demo Readiness should use `release/v0.9.0` | This work prepares a versioned release package rather than adding new feature behavior. |
+| Optional DashScope provider is not a main demo dependency | The user explicitly asked to confirm only the entry and environment variable explanation. |
 | Stage 2 will keep `SimulationEngine` strategy-based | Existing design already accepts privacy and assignment strategy objects. |
 | Implement factories after concrete algorithms | Factory tests are clearer once there are multiple concrete strategies. |
 | CSV export is a separate `data` module | Export should not pollute algorithm, simulation, or GUI layers. |
