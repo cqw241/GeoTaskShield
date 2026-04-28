@@ -44,6 +44,10 @@ int main(int argc, char** argv)
     auto* batchWidget = window.findChild<gts::BatchResultsWidget*>();
     require(batchWidget != nullptr,
             "MainWindow should expose a Batch Results tab.");
+    require(batchWidget->hasMarkdownActionsForTesting(),
+            "BatchResultsWidget should expose Markdown preview and export entries.");
+    require(batchWidget->hasFilteredCsvExportActionForTesting(),
+            "BatchResultsWidget should expose a filtered CSV export entry.");
 
     const std::string csvPath = writeTempCsv(
         "gts_phase7_gui.csv",
@@ -64,6 +68,40 @@ int main(int argc, char** argv)
             "BatchResultsWidget should sort numeric columns numerically.");
     require(batchWidget->chartBarCountForTesting() == 2,
             "BatchResultsWidget should expose chart data after loading.");
+    const QString markdown = batchWidget->markdownReportForTesting();
+    require(markdown.contains("# GeoTaskShield Batch Results Report"),
+            "BatchResultsWidget should generate a Markdown report title.");
+    require(markdown.contains("| high | 1 | 1 | Grid Privacy | Nearest Greedy | 90.00% |"),
+            "BatchResultsWidget should include loaded rows in the Markdown report.");
+    require(markdown.contains("Best privacy-utility ratio"),
+            "BatchResultsWidget should summarize the generated Markdown report.");
+
+    const std::string markdownPath = (
+        std::filesystem::temp_directory_path() / "gts_phase9_gui_report.md").string();
+    require(batchWidget->exportMarkdownForTesting(QString::fromStdString(markdownPath)),
+            "BatchResultsWidget should export the generated Markdown report.");
+    std::ifstream markdownFile(markdownPath, std::ios::binary);
+    const std::string exportedMarkdown((std::istreambuf_iterator<char>(markdownFile)),
+                                       std::istreambuf_iterator<char>());
+    require(exportedMarkdown.find("# GeoTaskShield Batch Results Report") !=
+                std::string::npos,
+            "Exported Markdown report should match the generated report.");
+    const QString filteredCsv = batchWidget->filteredCsvForTesting();
+    require(filteredCsv.contains("scenario,workers,tasks,grid_size,k,epsilon"),
+            "BatchResultsWidget should generate a filtered CSV header.");
+    require(filteredCsv.contains("high,1,1,10,1,1,Grid Privacy,Nearest Greedy"),
+            "BatchResultsWidget should include visible rows in the filtered CSV.");
+
+    const std::string filteredCsvPath =
+        (std::filesystem::temp_directory_path() / "gts_phase9_filtered_gui.csv").string();
+    require(batchWidget->exportFilteredCsvForTesting(QString::fromStdString(filteredCsvPath)),
+            "BatchResultsWidget should export the filtered CSV report.");
+    std::ifstream filteredCsvFile(filteredCsvPath, std::ios::binary);
+    const std::string exportedCsv((std::istreambuf_iterator<char>(filteredCsvFile)),
+                                  std::istreambuf_iterator<char>());
+    require(exportedCsv.find("scenario,workers,tasks,grid_size,k,epsilon") !=
+                std::string::npos,
+            "Exported filtered CSV should contain the batch CSV header.");
 
     return 0;
 }

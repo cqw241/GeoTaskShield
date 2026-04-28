@@ -29,9 +29,18 @@ public:
     int chartBarCountForTesting() const;
     QString firstScenarioForTesting() const;
     void sortByColumnForTesting(const QString& fieldName, Qt::SortOrder order);
+    bool hasMarkdownActionsForTesting() const;
+    QString markdownReportForTesting() const;
+    bool exportMarkdownForTesting(const QString& filePath) const;
+    bool hasFilteredCsvExportActionForTesting() const;
+    QString filteredCsvForTesting() const;
+    bool exportFilteredCsvForTesting(const QString& filePath) const;
 
 private:
     void openCsv();
+    void exportFilteredCsv();
+    void previewMarkdown();
+    void exportMarkdown();
     void resetFilters();
     void rebuildFilterCombos();
     void refreshView();
@@ -42,12 +51,19 @@ private:
     BatchResultMetric selectedMetric() const;
     BatchResultSortField sortFieldForColumn(int column) const;
     int columnForFieldName(const QString& fieldName) const;
+    std::string currentMarkdownReport() const;
+    std::string currentCsvReport() const;
+    bool writeMarkdownToFile(const QString& filePath) const;
+    bool writeCsvToFile(const QString& filePath) const;
 
     BatchResultModel model_;
     std::vector<BatchResultRecord> visibleRecords_;
     std::vector<ChartBar> currentBars_;
 
     QPushButton* openButton_{};
+    QPushButton* exportFilteredCsvButton_{};
+    QPushButton* previewMarkdownButton_{};
+    QPushButton* exportMarkdownButton_{};
     QPushButton* resetButton_{};
     QLabel* fileLabel_{};
     QComboBox* privacyCombo_{};
