@@ -2,6 +2,8 @@
 
 GeoTaskShield is a C++20/CMake simulator for privacy-preserving task allocation in mobile crowdsensing. It models workers and sensing tasks on a 2D map, applies location privacy mechanisms, runs task assignment algorithms, evaluates utility/privacy metrics, and presents results through console, CSV, Qt Widgets GUI, and a local experiment-report agent.
 
+Current release: `v0.6.0`.
+
 ## Current Status
 
 Completed phases:
@@ -10,10 +12,8 @@ Completed phases:
 - Phase 2: Additional privacy mechanisms, assignment algorithms, comparison experiments, and CSV export.
 - Phase 3: Qt Widgets GUI visualization.
 - Phase 4: Local rule-based AIAgent and Markdown experiment report generation.
-
-Planned next phase:
-
-- Phase 5: Batch experiment support, additional metrics, and richer report/chart export.
+- Phase 5: Batch experiment support, additional metrics, and richer CSV/Markdown export.
+- Phase 6: Engineering cleanup, release packaging, style rules, and `v0.6.0` release preparation.
 
 ## Features
 
@@ -38,6 +38,9 @@ Planned next phase:
 - Qt Widgets GUI with parameter panel, map canvas, result panel, and log panel.
 - Local natural-language experiment agent.
 - Markdown experiment report generation.
+- Batch experiment runner.
+- Batch CSV and Markdown export.
+- Additional metrics: worker load standard deviation, Jain fairness index, privacy-utility ratio, and timeout rate.
 
 ## Repository Layout
 
@@ -45,14 +48,18 @@ Planned next phase:
 GeoTaskShield/
   CMakeLists.txt
   CMakePresets.json
+  CHANGELOG.md
   HANDOFF.md
   README.md
   git_guide.md
+  scripts/
+    package_windows.ps1
   phase2_results.csv
   GeoTaskShield/
     app/
       console/
       agent_demo/
+      batch_demo/
     model/
     simulation/
     privacy/
@@ -60,6 +67,7 @@ GeoTaskShield/
     evaluation/
     data/
     agent/
+    experiment/
     gui/
     tests/
 ```
@@ -136,11 +144,46 @@ out\build\x64-debug-qt\GeoTaskShield\GeoTaskShieldGui.exe
 
 `GeoTaskShieldGui` runs `windeployqt` after build on Windows. Non-Qt executables such as `GeoTaskShield.exe` and `GeoTaskShieldTests.exe` do not need `windeployqt`.
 
+### Release Build and Package
+
+Build the Release GUI preset:
+
+```powershell
+cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 && cmake --preset x64-release-qt && cmake --build out\build\x64-release-qt'
+```
+
+Create a local Windows ZIP package:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\package_windows.ps1
+```
+
+The package is generated under:
+
+```text
+out/package/GeoTaskShield-v0.6.0-windows-x64.zip
+```
+
+Package outputs under `out/` are generated artifacts and are not committed.
+
 ## AIAgent Notes
 
 The current agent is intentionally local and rule-based. It does not call an online model and does not require network access.
 
 If a future version integrates Aliyun Bailian or another model provider, API keys must be read from runtime environment variables such as `DASHSCOPE_API_KEY`. Do not commit API keys, generated secrets, or model credentials.
+
+## Batch Experiment Demo
+
+```powershell
+out\build\x64-debug\GeoTaskShield\GeoTaskShieldBatchDemo.exe
+```
+
+The batch demo runs deterministic scenarios across worker/task counts, epsilon, k, and grid size. It prints a Markdown table and writes:
+
+```text
+phase5_batch_results.csv
+phase5_batch_report.md
+```
 
 ## Git Workflow
 
@@ -165,10 +208,29 @@ feat(agent): add experiment report agent
 docs(handoff): update phase 4 status
 ```
 
+Release branches use `release/*`. The Phase 6 release branch is:
+
+```text
+release/phase6-engineering-release
+```
+
+The Phase 6 release tag is:
+
+```text
+v0.6.0
+```
+
+## Code Style
+
+- `.clang-format` defines the project C++ formatting convention.
+- MSVC builds use `/W4`; non-MSVC builds use `-Wall -Wextra -Wpedantic`.
+- Existing code was not broadly reformatted in Phase 6 to keep the release diff focused.
+
 ## Documentation
 
 - `HANDOFF.md`: current project handoff, phase status, verification commands, and next steps.
 - `GeoTaskShield.md`: original project concept.
+- `CHANGELOG.md`: release notes.
 - `docs/superpowers/specs/`: design notes for implemented phases.
 - `docs/superpowers/plans/`: implementation plans.
 
@@ -178,3 +240,4 @@ docs(handoff): update phase 4 status
 - Hungarian assignment supports one task per expanded worker slot, not strict multi-worker task optimization.
 - Laplace privacy is a simulator-level coordinate perturbation, not a full formal differential privacy proof.
 - The AIAgent parser is rule-based and supports common prompt patterns only.
+- Qt Charts integration is not implemented yet; Phase 5 exports report-ready CSV/Markdown instead.

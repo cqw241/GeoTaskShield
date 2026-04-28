@@ -1,6 +1,8 @@
 #include "evaluation/MetricsCalculator.h"
 
+#include <cmath>
 #include <unordered_map>
+#include <vector>
 
 namespace gts {
 
@@ -28,6 +30,13 @@ EvaluationMetrics MetricsCalculator::calculate(const std::vector<Task>& tasks,
     metrics.algorithmRuntimeMs = assignment.algorithmRuntimeMs;
 
     double totalDistance = 0.0;
+    int timedOutTasks = 0;
+    std::unordered_map<int, int> assignmentCountsByWorkerId;
+    assignmentCountsByWorkerId.reserve(workers.size());
+    for (const Worker& worker : workers) {
+        assignmentCountsByWorkerId.emplace(worker.id, 0);
+    }
+
     for (const Assignment& item : assignment.assignments) {
         const auto taskIt = tasksById.find(item.taskId);
         const auto workerIt = workersById.find(item.workerId);
@@ -35,8 +44,20 @@ EvaluationMetrics MetricsCalculator::calculate(const std::vector<Task>& tasks,
             continue;
         }
 
-        totalDistance += workerIt->second->realLocation.distanceTo(taskIt->second->location);
+        const double distance =
+            workerIt->second->realLocation.distanceTo(taskIt->second->location);
+        totalDistance += distance;
         metrics.totalReward += taskIt->second->reward;
+
+        const double speed = workerIt->second->speed > 0.0 ? workerIt->second->speed : 1.0;
+        if (distance / speed > taskIt->second->deadline) {
+            ++timedOutTasks;
+        }
+
+        auto loadIt = assignmentCountsByWorkerId.find(item.workerId);
+        if (loadIt != assignmentCountsByWorkerId.end()) {
+            ++loadIt->second;
+        }
     }
 
     if (metrics.totalTasks > 0) {
@@ -46,7 +67,39 @@ EvaluationMetrics MetricsCalculator::calculate(const std::vector<Task>& tasks,
     if (!assignment.assignments.empty()) {
         metrics.averageMovingDistance =
             totalDistance / static_cast<double>(assignment.assignments.size());
+        metrics.timeoutRate =
+            static_cast<double>(timedOutTasks) /
+            static_cast<double>(assignment.assignments.size());
     }
+
+    if (!workers.empty()) {
+        const double meanLoad =
+            static_cast<double>(assignment.assignments.size()) /
+            static_cast<double>(workers.size());
+        double variance = 0.0;
+        double loadSum = 0.0;
+        double loadSquareSum = 0.0;
+
+        for (const Worker& worker : workers) {
+            const int load = assignmentCountsByWorkerId[worker.id];
+            const double loadAsDouble = static_cast<double>(load);
+            const double delta = loadAsDouble - meanLoad;
+            variance += delta * delta;
+            loadSum += loadAsDouble;
+            loadSquareSum += loadAsDouble * loadAsDouble;
+        }
+
+        variance /= static_cast<double>(workers.size());
+        metrics.userLoadStdDev = std::sqrt(variance);
+        if (loadSquareSum > 0.0) {
+            metrics.fairnessIndex =
+                (loadSum * loadSum) /
+                (static_cast<double>(workers.size()) * loadSquareSum);
+        }
+    }
+
+    metrics.privacyUtilityRatio =
+        metrics.completionRate / (1.0 + metrics.averagePrivacyLoss);
 
     return metrics;
 }

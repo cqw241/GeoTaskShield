@@ -2,6 +2,87 @@
 
 ## Session: 2026-04-27
 
+### Phase 6: Engineering Cleanup and Release
+- **Status:** complete
+- Actions taken:
+  - Used `planning-with-files` to continue persistent phase tracking.
+  - Re-read `HANDOFF.md`, `git_guide.md`, `task_plan.md`, and `findings.md`.
+  - Confirmed Phase 6 scope: engineering cleanup, release documentation, style conventions, and Windows packaging.
+  - Confirmed working tree was clean on `feature/phase5-experiment-enhancements`.
+  - Merged `feature/phase5-experiment-enhancements` into `develop`.
+  - Created `release/phase6-engineering-release`.
+  - Wrote Phase 6 design and implementation plan documents.
+  - Removed unused Visual Studio template entry files.
+  - Added `.clang-format`, project warning options, `x64-release-qt`, `CHANGELOG.md`, and `scripts/package_windows.ps1`.
+  - Updated README and HANDOFF with release build and packaging instructions.
+  - Ran non-Qt Debug build and CTest; tests passed, but MSVC reported `/W3` to `/W4` override warnings.
+  - Adjusted CMake to remove default `/W*` flags before applying project warning options.
+  - Ran Qt Debug build and CTest successfully.
+  - Ran Qt Release build and CTest successfully.
+  - Ran CMake install successfully.
+  - Ran `scripts/package_windows.ps1` successfully.
+  - Confirmed the package contains the expected executables, Qt runtime/plugins, README, HANDOFF, changelog, and sample reports.
+  - Ran `git diff --check` successfully.
+  - Ran secret-pattern scan successfully; no API key-like strings were found outside ignored build folders.
+  - Confirmed no files under `out/` are tracked.
+- Files created/modified:
+  - `docs/superpowers/specs/2026-04-27-phase6-engineering-release-design.md` (created)
+  - `docs/superpowers/plans/2026-04-27-phase6-engineering-release.md` (created)
+  - `.clang-format` (created)
+  - `CHANGELOG.md` (created)
+  - `scripts/package_windows.ps1` (created)
+  - `CMakeLists.txt` (modified)
+  - `CMakePresets.json` (modified)
+  - `GeoTaskShield/CMakeLists.txt` (modified)
+  - `GeoTaskShield/GeoTaskShield.cpp` (deleted)
+  - `GeoTaskShield/GeoTaskShield.h` (deleted)
+  - `README.md` (modified)
+  - `HANDOFF.md` (modified)
+  - `task_plan.md` (updated)
+  - `findings.md` (updated)
+  - `progress.md` (updated)
+- Git:
+  - Current branch: `release/phase6-engineering-release`
+
+### Phase 5: Experiment Enhancements
+- **Status:** complete
+- Actions taken:
+  - Used `planning-with-files` for Phase 5 tracking.
+  - Confirmed clean worktree on `main`.
+  - Merged the latest GitHub publish record from `main` into `develop`.
+  - Created `feature/phase5-experiment-enhancements`.
+  - Wrote Phase 5 design and implementation plan documents.
+  - Chose a core-first scope: expanded metrics, batch runner, batch CSV/Markdown export, and a batch demo executable.
+  - Added failing tests for expanded metrics, batch experiment rows, and batch CSV/Markdown export.
+  - Confirmed the expected red build on missing `experiment/BatchExperiment.h`.
+  - Added user load standard deviation, Jain fairness index, privacy-utility ratio, and timeout rate metrics.
+  - Implemented the `experiment` module with `BatchExperimentRunner` and `BatchExperimentExporter`.
+  - Added `GeoTaskShieldBatchDemo`, which writes `phase5_batch_results.csv` and `phase5_batch_report.md`.
+  - Ran core tests, full non-Qt build, CTest, and the batch demo successfully.
+  - Ran full Qt build and CTest successfully.
+  - Confirmed no API key-like secret strings were present in tracked project files before commit.
+- Files created/modified:
+  - `docs/superpowers/specs/2026-04-27-phase5-experiment-enhancements-design.md` (created)
+  - `docs/superpowers/plans/2026-04-27-phase5-experiment-enhancements.md` (created)
+  - `GeoTaskShield/experiment/BatchExperiment.h` (created)
+  - `GeoTaskShield/experiment/BatchExperiment.cpp` (created)
+  - `GeoTaskShield/experiment/BatchExperimentExporter.h` (created)
+  - `GeoTaskShield/experiment/BatchExperimentExporter.cpp` (created)
+  - `GeoTaskShield/app/batch_demo/main.cpp` (created)
+  - `GeoTaskShield/evaluation/EvaluationMetrics.h` (modified)
+  - `GeoTaskShield/evaluation/MetricsCalculator.cpp` (modified)
+  - `GeoTaskShield/tests/test_core.cpp` (modified)
+  - `GeoTaskShield/CMakeLists.txt` (modified)
+  - `README.md` (modified)
+  - `HANDOFF.md` (modified)
+  - `task_plan.md` (updated)
+  - `findings.md` (updated)
+  - `progress.md` (updated)
+  - `phase5_batch_results.csv` (generated)
+  - `phase5_batch_report.md` (generated)
+- Git:
+  - Current branch: `feature/phase5-experiment-enhancements`
+
 ### README and GitHub Publish
 - **Status:** complete
 - Actions taken:
@@ -220,6 +301,15 @@
 | Phase 4 non-Qt verification | `cmake --preset x64-debug && cmake --build out\build\x64-debug && ctest --test-dir out\build\x64-debug --output-on-failure && out\build\x64-debug\GeoTaskShield\GeoTaskShieldAgentDemo.exe` | Build/test/demo succeed | Build exit 0; `1/1` CTest passed; demo printed Markdown report | Pass |
 | Phase 4 Qt verification | `cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt && ctest --test-dir out\build\x64-debug-qt --output-on-failure` | Qt build and all tests pass | Build exit 0; `2/2` CTest passed | Pass |
 | Secret scan | `Get-ChildItem ... | Select-String -Pattern <provided API key>` | No API key committed | No matches | Pass |
+| Phase 5 red test | `cmake --preset x64-debug && cmake --build out\build\x64-debug --target GeoTaskShieldTests` after adding experiment tests | Fails because experiment headers do not exist yet | Failed on missing `experiment/BatchExperiment.h` | Expected fail |
+| Phase 5 core test | `cmake --preset x64-debug && cmake --build out\build\x64-debug --target GeoTaskShieldTests && ctest --test-dir out\build\x64-debug --output-on-failure -R GeoTaskShieldCoreTests` | New metric and batch export tests pass | `1/1 Test #1: GeoTaskShieldCoreTests Passed` | Pass |
+| Phase 5 non-Qt verification | `cmake --preset x64-debug && cmake --build out\build\x64-debug && ctest --test-dir out\build\x64-debug --output-on-failure && out\build\x64-debug\GeoTaskShield\GeoTaskShieldBatchDemo.exe` | Build/test/demo succeed and generate Phase 5 outputs | Build exit 0; `1/1` CTest passed; batch demo wrote CSV and Markdown outputs | Pass |
+| Phase 5 Qt verification | `cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt && ctest --test-dir out\build\x64-debug-qt --output-on-failure` | Qt build and all tests pass | Build exit 0; `2/2` CTest passed | Pass |
+| Phase 6 non-Qt Debug verification | `cmake --preset x64-debug && cmake --build out\build\x64-debug && ctest --test-dir out\build\x64-debug --output-on-failure` | Build and core tests pass | Build exit 0; `1/1` CTest passed | Pass |
+| Phase 6 Qt Debug verification | `cmake --preset x64-debug-qt && cmake --build out\build\x64-debug-qt && ctest --test-dir out\build\x64-debug-qt --output-on-failure` | Qt build and all tests pass | Build exit 0; `2/2` CTest passed | Pass |
+| Phase 6 Qt Release verification | `cmake --preset x64-release-qt && cmake --build out\build\x64-release-qt && ctest --test-dir out\build\x64-release-qt --output-on-failure` | Release Qt build and tests pass | Build exit 0; `2/2` CTest passed | Pass |
+| Phase 6 install verification | `cmake --install out\build\x64-release-qt` | Install rules copy app binaries and docs | Install copied executables and docs under `out/install/x64-release-qt` | Pass |
+| Phase 6 package verification | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package_windows.ps1` | Package ZIP is created with runtime files | Created `out\package\GeoTaskShield-v0.6.0-windows-x64.zip` | Pass |
 
 ## Error Log
 | Timestamp | Error | Attempt | Resolution |
@@ -232,16 +322,20 @@
 | 2026-04-27 | PowerShell rejected `&&` as a command separator | 1 | Ran `git add` and `git commit` separately. |
 | 2026-04-27 | GUI smoke test hung behind missing `Qt6Core.dll` system dialog | 1 | Killed the blocked smoke test process, then added Qt `PATH`/plugin CTest environment and GUI `windeployqt` deployment. |
 | 2026-04-27 | PowerShell `Select-String -Recurse` was unsupported | 1 | Re-ran the scan with `Get-ChildItem -Recurse -File | Select-String`. |
+| 2026-04-27 | Missing `experiment/BatchExperiment.h` during Phase 5 red build | 1 | Implemented the batch experiment module and exporter. |
+| 2026-04-27 | CMake warned that `CMAKE_C_COMPILER` was manually specified but unused after switching project languages to CXX-only | 1 | Removed `CMAKE_C_COMPILER` from `CMakePresets.json`. |
 
 ## 5-Question Reboot Check
 | Question | Answer |
 |----------|--------|
 | Where am I? | Phase 3 Qt Widgets GUI work is complete on `feature/phase3-qt-gui`. |
 | Where am I? | Phase 4 AIAgent/report work is complete on `feature/phase4-ai-agent-report`. |
-| Where am I going? | Next step is review/merge into `develop` or continue with Phase 4 enhancements. |
-| What's the goal? | Add local natural-language experiment orchestration and Markdown report generation while keeping console, GUI, and core behavior stable. |
+| Where am I? | Phase 5 experiment enhancement work is complete on `feature/phase5-experiment-enhancements`. |
+| Where am I? | Phase 6 engineering release work is complete on `release/phase6-engineering-release`. |
+| Where am I going? | Next step is Phase 7: visualization and Qt Charts/dashboard integration. |
+| What's the goal? | Extend GeoTaskShield from single-run demos into repeatable batch experiments with report-ready metrics and outputs while keeping console, GUI, and core behavior stable. |
 | What have I learned? | See `findings.md`. |
-| What have I done? | Initialized Git Flow, added the Qt Widgets GUI, added the Phase 4 experiment agent/report generator, and verified both non-Qt and Qt builds. |
+| What have I done? | Initialized Git Flow, added the Qt Widgets GUI, added the Phase 4 experiment agent/report generator, added Phase 5 batch experiment/export support, added Phase 6 release packaging/cleanup, and verified Debug, Qt, Release, install, and package paths. |
 
 ---
 *Update after completing each phase or encountering errors*

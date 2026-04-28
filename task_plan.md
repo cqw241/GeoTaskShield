@@ -1,10 +1,27 @@
-# Task Plan: GeoTaskShield Phase 4 - AIAgent and Experiment Reports
+# Task Plan: GeoTaskShield Phase 6 - Engineering Release
 
 ## Goal
-Add a local natural-language experiment agent and Markdown report generation while preserving the existing console, GUI, and core algorithm behavior.
+Prepare GeoTaskShield for a cleaner C++/Qt delivery by integrating Phase 5, removing obsolete template files, adding style and packaging conventions, and publishing a verified release tag.
 
 ## Current Phase
-Phase 4 complete
+Phase 6 complete
+
+## Phase 6 Success Criteria
+- Phase 5 is merged into `develop`.
+- Release work happens on `release/phase6-engineering-release`.
+- Remove unused `GeoTaskShield.cpp` / `GeoTaskShield.h` template files.
+- Add `.clang-format`, warning options, a Qt Release preset, and a Windows packaging helper.
+- Update README, HANDOFF, planning files, and release notes.
+- Verify non-Qt Debug, Qt Debug, Release Qt, package script, secret scan, and diff checks.
+- Merge release into `main`, tag `v0.6.0`, merge back into `develop`, and push branches/tags.
+
+## Phase 5 Success Criteria
+- Work happens on `feature/phase5-experiment-enhancements`.
+- Add batch experiment scenarios and runner in a Qt-independent core module.
+- Add user load balance, fairness, privacy-utility ratio, and timeout metrics.
+- Generate batch CSV and Markdown outputs from a single demo executable.
+- Existing console, Agent, GUI, and tests continue to pass.
+- Update README and HANDOFF with Phase 5 status and commands.
 
 ## Phase 4 Success Criteria
 - Work happens on `feature/phase4-ai-agent-report` after integrating completed Phase 3 into `develop`.
@@ -133,6 +150,69 @@ Phase 4 complete
 - [x] Commit Phase 4 feature
 - **Status:** complete
 
+### Phase 16: Phase 5 Branch and Design
+- [x] Sync latest `main` publish record back into `develop`
+- [x] Create `feature/phase5-experiment-enhancements`
+- [x] Write Phase 5 design document
+- [x] Write Phase 5 implementation plan
+- **Status:** complete
+
+### Phase 17: Expanded Metrics
+- [x] Add failing tests for new metrics
+- [x] Add new `EvaluationMetrics` fields
+- [x] Update `MetricsCalculator`
+- **Status:** complete
+
+### Phase 18: Batch Experiments
+- [x] Add batch runner tests
+- [x] Add `experiment` module
+- [x] Add batch runner CMake wiring
+- **Status:** complete
+
+### Phase 19: Batch Export and Demo
+- [x] Add batch exporter tests
+- [x] Add CSV/Markdown batch exporter
+- [x] Add `GeoTaskShieldBatchDemo`
+- **Status:** complete
+
+### Phase 20: Documentation, Verification, Push
+- [x] Update README and HANDOFF
+- [x] Run non-Qt verification
+- [x] Run Qt verification
+- [x] Commit and push feature branch
+- **Status:** complete
+
+### Phase 21: Phase 6 Release Branch
+- [x] Merge Phase 5 feature branch into `develop`
+- [x] Create `release/phase6-engineering-release`
+- [x] Write Phase 6 design document
+- [x] Write Phase 6 implementation plan
+- **Status:** complete
+
+### Phase 22: Engineering Cleanup
+- [x] Remove unused Visual Studio template entry files
+- [x] Add code formatting convention
+- [x] Add compiler warning convention
+- [x] Add Qt Release preset
+- **Status:** complete
+
+### Phase 23: Packaging and Release Docs
+- [x] Add Windows packaging helper
+- [x] Add changelog/release notes
+- [x] Update README and HANDOFF for Phase 6
+- **Status:** complete
+
+### Phase 24: Verification and Publishing
+- [x] Run non-Qt Debug verification
+- [x] Run Qt Debug verification
+- [x] Run Release Qt build verification
+- [x] Run CMake install verification
+- [x] Run package script
+- [x] Run diff and secret checks
+- [x] Commit release branch
+- [x] Merge to `main`, tag `v0.6.0`, merge back to `develop`, and push
+- **Status:** complete
+
 ## Key Questions
 1. Should Hungarian matching support tasks requiring multiple workers in Phase 2?
    - Decision: no. Phase 2 implements one-worker-per-task matching and leaves multi-worker assignment for a later extension.
@@ -148,6 +228,8 @@ Phase 4 complete
 | Use TDD for new mechanisms and algorithms | New behavior is algorithmic and easy to regress; tests define expected deterministic behavior. |
 | Implement Hungarian for square/rectangular one-to-one assignment only | It is sufficient for Phase 2 comparison and avoids overcomplicating multi-worker task semantics. |
 | Use deterministic random seeds in tests | Privacy noise and data generation must be reproducible for reliable verification. |
+| Phase 6 uses a `release/*` branch | The work is delivery hardening and Git Flow explicitly reserves release branches for release preparation. |
+| Tag Phase 6 as `v0.6.0` | The project has no prior tags; using the phase number keeps the first release tag unambiguous. |
 
 ## Errors Encountered
 | Error | Attempt | Resolution |
@@ -157,9 +239,13 @@ Phase 4 complete
 | PowerShell rejected `&&` command separator | 1 | Ran `git add` and `git commit` as separate commands. |
 | GUI smoke test hung behind Windows missing Qt6Core.dll dialog | 1 | Added Qt runtime/plugin environment for CTest and `windeployqt` deployment for GUI target. |
 | PowerShell `Select-String -Recurse` unsupported | 1 | Used `Get-ChildItem -Recurse -File | Select-String` for secret scanning. |
+| Missing `experiment/BatchExperiment.h` during Phase 5 red build | 1 | Implemented the batch experiment module and exporter after confirming the expected failure. |
+| PowerShell `Select-Object -Index 32..42` treated the range as a string | 1 | Re-ran with a `$lines[32..42]` array slice. |
+| MSVC warned that `/W4` overrides default `/W3` | 1 | Removed default `/W*` CMake flags before applying project warning options. |
 
 ## Notes
-- The current project is not a git repository, so progress must be tracked in planning files and local file state.
 - Existing build verification uses Visual Studio DevCmd because the normal PowerShell PATH does not expose `cl.exe`/`ninja`.
 - User mentioned Qt-installed CMake/Ninja are available; if VS DevCmd is unavailable later, search Qt install paths for those tools.
 - As of Phase 3, the project is a Git repository. Follow `git_guide.md` for all future git operations.
+- Phase 5 batch outputs are generated by `GeoTaskShieldBatchDemo` into `phase5_batch_results.csv` and `phase5_batch_report.md`.
+- Phase 6 package output is generated under `out/package` and must not be committed.
