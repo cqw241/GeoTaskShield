@@ -36,6 +36,8 @@ public:
     QString filteredCsvForTesting() const;
     bool exportFilteredCsvForTesting(const QString& filePath) const;
     std::vector<BatchResultRecord> currentFilteredRecords() const;
+    QString tableHeaderTextForTesting(int column) const;
+    QString tableHeaderToolTipForTesting(int column) const;
 
 private:
     void openCsv();

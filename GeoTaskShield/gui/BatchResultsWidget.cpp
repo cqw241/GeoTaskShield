@@ -29,6 +29,29 @@ namespace gts {
 
 namespace {
 
+struct TableHeaderSpec {
+    const char* label;
+    const char* fieldName;
+    int initialWidth;
+};
+
+constexpr TableHeaderSpec kTableHeaders[] = {
+    {"Scenario", "scenario", 180},
+    {"Workers", "workers", 78},
+    {"Tasks", "tasks", 72},
+    {"Privacy", "privacy", 150},
+    {"Algorithm", "algorithm", 135},
+    {"Completion", "completionRate", 104},
+    {"Avg Distance", "averageTrueDistance", 116},
+    {"Total Reward", "totalReward", 112},
+    {"Privacy Loss", "averagePrivacyLoss", 116},
+    {"Runtime", "runtimeMs", 92},
+    {"Load StdDev", "userLoadStdDev", 108},
+    {"Fairness", "fairnessIndex", 98},
+    {"Privacy/Utility", "privacyUtilityRatio", 128},
+    {"Timeout", "timeoutRate", 88}
+};
+
 class NumericTableWidgetItem : public QTableWidgetItem {
 public:
     explicit NumericTableWidgetItem(double value)
@@ -216,24 +239,19 @@ BatchResultsWidget::BatchResultsWidget(QWidget* parent)
     detailText_->setText("No row selected.");
 
     table_ = new QTableWidget(this);
-    table_->setColumnCount(14);
-    table_->setHorizontalHeaderLabels({
-        "scenario",
-        "workers",
-        "tasks",
-        "privacy",
-        "algorithm",
-        "completionRate",
-        "averageTrueDistance",
-        "totalReward",
-        "averagePrivacyLoss",
-        "runtimeMs",
-        "userLoadStdDev",
-        "fairnessIndex",
-        "privacyUtilityRatio",
-        "timeoutRate"
-    });
-    table_->horizontalHeader()->setStretchLastSection(true);
+    table_->setColumnCount(static_cast<int>(std::size(kTableHeaders)));
+    for (int column = 0; column < table_->columnCount(); ++column) {
+        const TableHeaderSpec& spec = kTableHeaders[static_cast<std::size_t>(column)];
+        auto* headerItem = new QTableWidgetItem(spec.label);
+        headerItem->setToolTip(spec.fieldName);
+        headerItem->setData(Qt::UserRole, spec.fieldName);
+        table_->setHorizontalHeaderItem(column, headerItem);
+        table_->setColumnWidth(column, spec.initialWidth);
+    }
+    table_->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+    table_->horizontalHeader()->setMinimumSectionSize(72);
+    table_->horizontalHeader()->setStretchLastSection(false);
+    table_->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
     table_->setSelectionBehavior(QAbstractItemView::SelectRows);
     table_->setSelectionMode(QAbstractItemView::SingleSelection);
     table_->setSortingEnabled(true);
@@ -363,6 +381,22 @@ bool BatchResultsWidget::exportFilteredCsvForTesting(const QString& filePath) co
 std::vector<BatchResultRecord> BatchResultsWidget::currentFilteredRecords() const
 {
     return visibleRecords_;
+}
+
+QString BatchResultsWidget::tableHeaderTextForTesting(int column) const
+{
+    if (column < 0 || column >= table_->columnCount()) {
+        return {};
+    }
+    return table_->horizontalHeaderItem(column)->text();
+}
+
+QString BatchResultsWidget::tableHeaderToolTipForTesting(int column) const
+{
+    if (column < 0 || column >= table_->columnCount()) {
+        return {};
+    }
+    return table_->horizontalHeaderItem(column)->toolTip();
 }
 
 void BatchResultsWidget::openCsv()
@@ -605,7 +639,9 @@ BatchResultSortField BatchResultsWidget::sortFieldForColumn(int column) const
 int BatchResultsWidget::columnForFieldName(const QString& fieldName) const
 {
     for (int column = 0; column < table_->columnCount(); ++column) {
-        if (table_->horizontalHeaderItem(column)->text() == fieldName) {
+        const QTableWidgetItem* headerItem = table_->horizontalHeaderItem(column);
+        if (headerItem->text() == fieldName ||
+            headerItem->data(Qt::UserRole).toString() == fieldName) {
             return column;
         }
     }

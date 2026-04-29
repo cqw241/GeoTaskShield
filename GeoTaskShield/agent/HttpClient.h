@@ -10,6 +10,7 @@ struct HttpRequest {
     std::string url;
     std::vector<std::pair<std::string, std::string>> headers;
     std::string body;
+    int timeoutMs{15000};
 };
 
 struct HttpResponse {

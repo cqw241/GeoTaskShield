@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.10.0 - 2026-04-28
+
+### Added
+
+- Phase 13 provider hardening for the optional OpenAI-compatible assistant provider.
+- `DASHSCOPE_TIMEOUT_MS` runtime configuration for provider request timeout.
+- Provider status text in the `Agent Assistant` GUI tab.
+
+### Changed
+
+- DashScope provider analysis now runs off the GUI thread to avoid blocking the Qt UI.
+- Provider failures, timeouts, empty responses, and malformed responses preserve local rule-based fallback analysis.
+
+### Verification
+
+- Non-Qt core tests cover timeout propagation, invalid timeout fallback, transport failure fallback, empty content fallback, and malformed response fallback.
+- GUI smoke tests cover provider status and missing-key fallback behavior without using a real API key.
+
 ## v0.9.0 - 2026-04-28
 
 ### Added

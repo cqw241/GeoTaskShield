@@ -12,7 +12,9 @@
 
 class QPushButton;
 class QComboBox;
+class QLabel;
 class QTextEdit;
+class QThread;
 
 namespace gts {
 
@@ -28,15 +30,23 @@ public:
     bool hasAssistantControlsForTesting() const;
     bool hasProviderSelectionForTesting() const;
     bool hasProviderOptionForTesting(const QString& labelPart) const;
+    bool hasProviderStatusForTesting() const;
     void setProviderForTesting(const QString& labelPart);
     void setPromptForTesting(const QString& prompt);
     void analyzeForTesting();
     QString intentPreviewForTesting() const;
     QString analysisMarkdownForTesting() const;
+    QString providerStatusForTesting() const;
+    bool isAnalyzingForTesting() const;
+    bool waitForAnalysisForTesting(int timeoutMs);
     bool exportMarkdownForTesting(const QString& filePath) const;
 
 private:
     void analyzePrompt();
+    void startProviderAnalysis(AssistantRequest request);
+    void finishProviderAnalysis(AssistantResponse response);
+    void applyAssistantResponse(const QString& statusText);
+    void setAnalyzing(bool analyzing, const QString& statusText);
     void exportMarkdown();
     bool writeMarkdownToFile(const QString& filePath) const;
 
@@ -45,11 +55,14 @@ private:
     AssistantResponse lastResponse_;
 
     QComboBox* providerCombo_{};
+    QLabel* providerStatusLabel_{};
     QTextEdit* promptEdit_{};
     QPushButton* analyzeButton_{};
     QTextEdit* intentPreview_{};
     QTextEdit* analysisPreview_{};
     QPushButton* exportMarkdownButton_{};
+    QThread* analysisThread_{};
+    bool analyzing_{};
 };
 
 } // namespace gts

@@ -159,6 +159,12 @@ HttpResponse WinHttpClient::postJson(const HttpRequest& request) const
         response.errorMessage = winHttpError("WinHttpOpenRequest");
         return response;
     }
+    if (!WinHttpSetTimeouts(httpRequest.value, request.timeoutMs,
+                            request.timeoutMs, request.timeoutMs,
+                            request.timeoutMs)) {
+        response.errorMessage = winHttpError("WinHttpSetTimeouts");
+        return response;
+    }
 
     const std::wstring headers = requestHeaders(request.headers);
     const DWORD bodySize = static_cast<DWORD>(request.body.size());

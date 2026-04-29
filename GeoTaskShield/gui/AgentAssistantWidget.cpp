@@ -10,8 +10,13 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
+#include <QCoreApplication>
+#include <QElapsedTimer>
+#include <QMetaObject>
+#include <QPointer>
 #include <QPushButton>
 #include <QTextEdit>
+#include <QThread>
 #include <QVBoxLayout>
 
 #include <utility>
@@ -30,8 +35,11 @@ AgentAssistantWidget::AgentAssistantWidget(QWidget* parent)
     providerCombo_->setObjectName("assistantProviderCombo");
     providerCombo_->addItem("Local rule-based", "local");
     providerCombo_->addItem("Aliyun Bailian (DashScope)", "dashscope");
+    providerStatusLabel_ = new QLabel("Local rule-based ready.", this);
+    providerStatusLabel_->setObjectName("assistantProviderStatus");
     providerLayout->addWidget(providerLabel);
     providerLayout->addWidget(providerCombo_);
+    providerLayout->addWidget(providerStatusLabel_);
     providerLayout->addStretch(1);
 
     promptEdit_ = new QTextEdit(this);
@@ -111,6 +119,11 @@ bool AgentAssistantWidget::hasProviderOptionForTesting(
     return false;
 }
 
+bool AgentAssistantWidget::hasProviderStatusForTesting() const
+{
+    return providerStatusLabel_ != nullptr;
+}
+
 void AgentAssistantWidget::setProviderForTesting(const QString& labelPart)
 {
     if (providerCombo_ == nullptr) {
@@ -145,6 +158,31 @@ QString AgentAssistantWidget::analysisMarkdownForTesting() const
     return analysisPreview_->toMarkdown();
 }
 
+QString AgentAssistantWidget::providerStatusForTesting() const
+{
+    if (providerStatusLabel_ == nullptr) {
+        return {};
+    }
+    return providerStatusLabel_->text();
+}
+
+bool AgentAssistantWidget::isAnalyzingForTesting() const
+{
+    return analyzing_;
+}
+
+bool AgentAssistantWidget::waitForAnalysisForTesting(int timeoutMs)
+{
+    QElapsedTimer timer;
+    timer.start();
+    while (analyzing_ && timer.elapsed() < timeoutMs) {
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 20);
+        QThread::msleep(5);
+    }
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 20);
+    return !analyzing_;
+}
+
 bool AgentAssistantWidget::exportMarkdownForTesting(const QString& filePath) const
 {
     return writeMarkdownToFile(filePath);
@@ -161,15 +199,79 @@ void AgentAssistantWidget::analyzePrompt()
 
     if (providerCombo_ != nullptr &&
         providerCombo_->currentData().toString() == "dashscope") {
-        OpenAICompatibleAssistant llmAssistant;
-        lastResponse_ = llmAssistant.analyze(request);
+        startProviderAnalysis(std::move(request));
+        return;
     } else {
         lastResponse_ = assistant_.analyze(request);
     }
+    applyAssistantResponse("Local rule-based analysis complete.");
+}
+
+void AgentAssistantWidget::startProviderAnalysis(AssistantRequest request)
+{
+    if (analyzing_) {
+        return;
+    }
+
+    setAnalyzing(true, "Aliyun Bailian (DashScope) analyzing...");
+    QPointer<AgentAssistantWidget> widget(this);
+    auto* thread = QThread::create([widget, request = std::move(request)]() mutable {
+        OpenAICompatibleAssistant llmAssistant;
+        AssistantResponse response = llmAssistant.analyze(request);
+        if (widget.isNull()) {
+            return;
+        }
+        QMetaObject::invokeMethod(
+            widget.data(),
+            [widget, response = std::move(response)]() mutable {
+                if (widget.isNull()) {
+                    return;
+                }
+                widget->finishProviderAnalysis(std::move(response));
+            },
+            Qt::QueuedConnection);
+    });
+
+    analysisThread_ = thread;
+    connect(thread, &QThread::finished, thread, &QObject::deleteLater);
+    connect(thread, &QThread::finished, this, [this, thread]() {
+        if (analysisThread_ == thread) {
+            analysisThread_ = nullptr;
+        }
+    });
+    thread->start();
+}
+
+void AgentAssistantWidget::finishProviderAnalysis(AssistantResponse response)
+{
+    lastResponse_ = std::move(response);
+    applyAssistantResponse(
+        lastResponse_.success
+            ? "Aliyun Bailian (DashScope) analysis complete."
+            : "Aliyun Bailian (DashScope) unavailable; local fallback shown.");
+}
+
+void AgentAssistantWidget::applyAssistantResponse(const QString& statusText)
+{
     intentPreview_->setMarkdown(
         QString::fromStdString(lastResponse_.intentPreviewMarkdown));
     analysisPreview_->setMarkdown(
         QString::fromStdString(lastResponse_.analysisMarkdown));
+    setAnalyzing(false, statusText);
+}
+
+void AgentAssistantWidget::setAnalyzing(bool analyzing, const QString& statusText)
+{
+    analyzing_ = analyzing;
+    if (analyzeButton_ != nullptr) {
+        analyzeButton_->setEnabled(!analyzing_);
+    }
+    if (providerCombo_ != nullptr) {
+        providerCombo_->setEnabled(!analyzing_);
+    }
+    if (providerStatusLabel_ != nullptr) {
+        providerStatusLabel_->setText(statusText);
+    }
 }
 
 void AgentAssistantWidget::exportMarkdown()

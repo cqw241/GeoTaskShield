@@ -5,6 +5,7 @@
 #include "agent/WinHttpClient.h"
 
 #include <algorithm>
+#include <charconv>
 #include <cstdlib>
 #include <iomanip>
 #include <memory>
@@ -43,6 +44,23 @@ std::string effectiveValue(const std::string& envName,
     const std::string value = envValue(envName);
     if (!value.empty()) {
         return value;
+    }
+    return fallback;
+}
+
+int effectivePositiveInt(const std::string& envName, int fallback)
+{
+    const std::string value = envValue(envName);
+    if (value.empty()) {
+        return fallback;
+    }
+
+    int parsed{};
+    const auto* begin = value.data();
+    const auto* end = value.data() + value.size();
+    const auto [position, error] = std::from_chars(begin, end, parsed);
+    if (error == std::errc() && position == end && parsed > 0) {
+        return parsed;
     }
     return fallback;
 }
@@ -339,6 +357,8 @@ AssistantResponse OpenAICompatibleAssistant::analyze(
         effectiveValue(config_.modelEnvName, config_.defaultModel);
     const std::string baseUrl =
         effectiveValue(config_.baseUrlEnvName, config_.defaultBaseUrl);
+    const int timeoutMs =
+        effectivePositiveInt(config_.timeoutMsEnvName, config_.requestTimeoutMs);
 
     HttpRequest httpRequest;
     httpRequest.url = chatCompletionsUrl(baseUrl);
@@ -347,6 +367,7 @@ AssistantResponse OpenAICompatibleAssistant::analyze(
         {"Content-Type", "application/json"}
     };
     httpRequest.body = requestBody(model, request, response);
+    httpRequest.timeoutMs = timeoutMs;
 
     const HttpResponse httpResponse = httpClient_->postJson(httpRequest);
     if (!httpResponse.success) {

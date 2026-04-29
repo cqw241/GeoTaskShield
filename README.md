@@ -1,7 +1,7 @@
 # GeoTaskShield
 
 面向移动群智感知的隐私保护任务分配仿真与可视化系统
-当前版本：`v0.9.0`
+当前版本：`v0.10.0`
 
 ## 摘要
 
@@ -160,22 +160,22 @@ flowchart LR
 
 ## 当前发布版本
 
-当前 release：`v0.9.0`
+当前 release：`v0.10.0`
 
-`v0.9.0` 固化了 Phase 11/12 的智能实验助手和可选真实 LLM provider 能力：
+`v0.10.0` 固化了 Phase 13 的真实 LLM provider 产品化体验：
 
 - `Batch Results` 当前筛选 CSV 导出。
 - Markdown 报告预览。
 - Markdown 报告导出。
 - `Agent Assistant` 本地规则分析、Markdown 预览和导出。
-- 可选 Aliyun Bailian / DashScope provider，默认不作为主演示依赖。
+- 可选 Aliyun Bailian / DashScope provider，默认不作为主演示依赖，并支持超时配置、失败回退和 GUI 非阻塞分析。
 - Qt-free 批量结果 CSV/Markdown 字符串生成。
-- v0.9.0 GUI 演示指南。
+- v0.10.0 GUI 演示指南。
 
 发布包默认输出：
 
 ```text
-out/package/GeoTaskShield-v0.9.0-windows-x64.zip
+out/package/GeoTaskShield-v0.10.0-windows-x64.zip
 ```
 
 ## 构建环境
@@ -237,7 +237,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package_windows.ps1
 打包输出：
 
 ```text
-out/package/GeoTaskShield-v0.9.0-windows-x64.zip
+out/package/GeoTaskShield-v0.10.0-windows-x64.zip
 ```
 
 ## GUI 演示流程
@@ -279,7 +279,7 @@ Compare privacy mechanisms for 50 tasks and explain completion rate, privacy uti
 详细演示脚本见：
 
 ```text
-docs/demo/v0.9.0-gui-demo-guide.md
+docs/demo/v0.10.0-gui-demo-guide.md
 ```
 
 ### 可选 LLM provider（Phase 12）
@@ -290,9 +290,12 @@ docs/demo/v0.9.0-gui-demo-guide.md
 $env:DASHSCOPE_API_KEY = "<your DashScope API key>"
 $env:DASHSCOPE_MODEL = "kimi-k2.5"
 $env:DASHSCOPE_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+$env:DASHSCOPE_TIMEOUT_MS = "15000"
 ```
 
-真实 provider 必须配置 `DASHSCOPE_API_KEY`。`DASHSCOPE_MODEL` 默认使用 `kimi-k2.5`，`DASHSCOPE_BASE_URL` 默认使用 DashScope 的 OpenAI-compatible endpoint。API key 必须只保存在本机运行环境变量中，不得写入源码、文档、测试、报告或提交记录。
+真实 provider 必须配置 `DASHSCOPE_API_KEY`。`DASHSCOPE_MODEL` 默认使用 `kimi-k2.5`，`DASHSCOPE_BASE_URL` 默认使用 DashScope 的 OpenAI-compatible endpoint，`DASHSCOPE_TIMEOUT_MS` 默认使用 `15000` 毫秒。API key 必须只保存在本机运行环境变量中，不得写入源码、文档、测试、报告或提交记录。
+
+如果真实 provider 缺少 API key、请求失败、超时、返回空内容或返回非预期结构，`Agent Assistant` 会显示本地规则分析 fallback，而不是中断 GUI。真实 provider 分析在 GUI 后台线程中执行，点击 `Analyze` 后界面会显示 provider 状态，避免窗口在网络请求期间阻塞。
 
 ## 示例自然语言 Agent 输入
 
@@ -320,24 +323,26 @@ $env:DASHSCOPE_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 | Phase 10 | `v0.8.0` Release and Demo Hardening |
 | Phase 11 | 离线智能实验助手、GUI 自然语言入口、当前 Batch Results 本地分析 |
 | Phase 12 | Optional OpenAI-compatible LLM provider for Agent Assistant, default-off and environment-variable configured |
+| Phase 13 | Agent provider hardening: timeout configuration, fallback handling, and non-blocking GUI provider analysis |
 | Demo Readiness | `v0.9.0` Release hardening, demo guide, package verification |
+| v0.10.0 Release | Phase 13 provider hardening release package and demo guide |
 
 ## 当前限制
 
 - 核心测试使用轻量自定义断言，尚未迁移到 GoogleTest 或 Catch2。
 - Hungarian 算法当前支持一任务对应一个展开 worker slot，不是严格多 worker 协同任务优化模型。
 - Laplace 隐私是仿真层面的坐标扰动，不是完整差分隐私证明实现。
-- Agent 和 Agent Assistant 默认使用本地规则型实现；Phase 12 的 DashScope provider 为可选入口，只从环境变量读取 API key，不保存密钥。
+- Agent 和 Agent Assistant 默认使用本地规则型实现；DashScope provider 为可选入口，只从环境变量读取 API key 和运行时配置，不保存密钥。
 - Batch Results 图表使用自绘轻量柱状图，尚未引入 Qt Graphs 或 Qt Charts。
 
 ## 后续扩展建议
 
 面向下一阶段智能化扩展，可以优先考虑：
 
-- 继续完善 `IExperimentAssistant` 的真实 LLM provider，例如异步调用、超时控制和更细粒度的提示词模板。
 - 支持多轮实验助手上下文和更细粒度的参数建议。
+- 拆分当前核心测试文件，或评估引入 GoogleTest/Catch2。
 - 支持更多隐私保护机制和任务分配算法。
-- 引入更系统的单元测试框架和持续集成流程。
+- 引入持续集成流程和更系统的发布检查。
 
 ## 仓库与文档
 
