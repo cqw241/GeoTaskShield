@@ -66,6 +66,14 @@ int main(int argc, char** argv)
             "BatchResultsWidget should expose Markdown preview and export entries.");
     require(batchWidget->hasFilteredCsvExportActionForTesting(),
             "BatchResultsWidget should expose a filtered CSV export entry.");
+    require(batchWidget->tableHeaderTextForTesting(6) == "Avg Distance",
+            "BatchResultsWidget should use readable metric table headers.");
+    require(batchWidget->tableHeaderToolTipForTesting(6).contains("averageTrueDistance"),
+            "BatchResultsWidget should preserve the original metric field name in a tooltip.");
+    require(batchWidget->tableHeaderTextForTesting(12) == "Privacy/Utility",
+            "BatchResultsWidget should keep long metric headers visible.");
+    require(batchWidget->tableHeaderToolTipForTesting(12).contains("privacyUtilityRatio"),
+            "BatchResultsWidget should expose the original privacy utility field name.");
 
     const std::string csvPath = writeTempCsv(
         "gts_phase7_gui.csv",
