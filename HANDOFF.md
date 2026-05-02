@@ -2,8 +2,8 @@
 
 更新时间：2026-04-28
 项目路径：`D:\VS2026_Projects\GeoTaskShield`
-当前状态：阶段 1 至阶段 13 已完成并通过本地验收。`v0.10.0` Release Hardening 正在 `release/v0.10.0` 上固化 Phase 13 的真实 LLM provider 产品化体验。
-当前开发分支：`release/v0.10.0`
+当前状态：阶段 1 至阶段 13 已完成并通过本地验收，`v0.10.0` 已合并回 `main`。当前正在 `develop` 上把真实 LLM provider 从 DashScope 专用产品文案泛化为 OpenAI-compatible provider。
+当前开发分支：`develop`
 
 ---
 
@@ -330,9 +330,9 @@ GeoTaskShieldAgentDemo
 模型 API 说明：
 
 - 阶段 4 第一版按交接计划使用本地规则解析，不依赖在线 LLM；
-- 用户曾提供阿里云百炼 API key 和模型名 `kimi-k2.5`，但当前实现未调用大模型；
+- 用户曾提供阿里云百炼 API key 和模型名，但 API key 未写入仓库；
 - API key 未写入源码、文档、测试、报告或提交；
-- 后续如接入百炼，应通过运行时环境变量读取，例如 `DASHSCOPE_API_KEY`，不要硬编码。
+- 真实 provider 必须通过运行时环境变量读取，例如 `GTS_LLM_API_KEY`，不要硬编码。
 
 ---
 
@@ -675,12 +675,13 @@ GeoTaskShield/gui/
 - `OpenAICompatibleAssistant` 先用 `RuleBasedAssistant` 生成本地 intent preview，再将用户 prompt、当前 Batch Results 行和本地 intent 发送给 OpenAI-compatible Chat Completions provider。
 - GUI `Agent Assistant` tab 新增 provider selector：
   - `Local rule-based` 默认选项，不需要网络或 API key；
-  - `Aliyun Bailian (DashScope)` 可选项，只有用户显式选择后才会调用真实 provider。
-- DashScope 配置使用运行时环境变量：
-  - `DASHSCOPE_API_KEY`：必需，真实 provider 缺失时 fail closed，不发起网络请求；
-  - `DASHSCOPE_MODEL`：可选，默认 `kimi-k2.5`；
-  - `DASHSCOPE_BASE_URL`：可选，默认 `https://dashscope.aliyuncs.com/compatible-mode/v1`；
-  - `DASHSCOPE_TIMEOUT_MS`：可选，默认 `15000` 毫秒。
+  - `OpenAI Compatible` 可选项，只有用户显式选择后才会调用真实 provider。
+- OpenAI-compatible provider 配置使用运行时环境变量：
+  - `GTS_LLM_API_KEY`：必需，真实 provider 缺失时 fail closed，不发起网络请求；
+  - `GTS_LLM_MODEL`：可选，默认 `deepseek-v4-flash`；
+  - `GTS_LLM_BASE_URL`：可选，默认 `https://dashscope.aliyuncs.com/compatible-mode/v1`；
+  - `GTS_LLM_TIMEOUT_MS`：可选，默认 `15000` 毫秒；
+  - `DASHSCOPE_*` 变量保留为兼容 fallback，`GTS_LLM_*` 优先。
 - 自动化测试通过 fake HTTP transport 验证请求体、鉴权 header 和响应解析，不依赖网络或真实 API key。
 
 约束：
@@ -704,7 +705,7 @@ GeoTaskShield/gui/
   - `Simulation` tab 默认仿真；
   - `Batch Results` 加载 `phase5_batch_results.csv`、筛选、排序、导出 CSV、预览/导出 Markdown；
   - `Agent Assistant` 默认 `Local rule-based` 分析和导出 Markdown；
-  - `Aliyun Bailian (DashScope)` provider 仅作为可选入口和环境变量说明，不作为主演示依赖。
+  - `OpenAI Compatible` provider 仅作为可选入口和环境变量说明，不作为主演示依赖。
 - GUI smoke test 增强为直接加载仓库根目录的 `phase5_batch_results.csv` 并验证导出路径。
 - 发布包继续包含 demo CSV、batch report、README/HANDOFF/CHANGELOG 和 `docs/demo`。
 
@@ -724,10 +725,10 @@ GeoTaskShield/gui/
 
 当前实现范围：
 
-- `HttpRequest` 增加 `timeoutMs`，`OpenAICompatibleAssistant` 通过 `DASHSCOPE_TIMEOUT_MS` 或默认配置传递 provider 请求超时。
+- `HttpRequest` 增加 `timeoutMs`，`OpenAICompatibleAssistant` 通过 `GTS_LLM_TIMEOUT_MS`、兼容 fallback `DASHSCOPE_TIMEOUT_MS` 或默认配置传递 provider 请求超时。
 - `WinHttpClient` 在发送请求前应用 WinHTTP 超时设置。
 - `OpenAICompatibleAssistant` 保持先运行本地 `RuleBasedAssistant`，provider 缺少密钥、请求失败、超时、空内容或非预期响应时返回本地分析 fallback。
-- GUI `Agent Assistant` 的 DashScope provider 路径改为后台线程执行，避免真实网络请求阻塞 Qt UI。
+- GUI `Agent Assistant` 的 OpenAI-compatible provider 路径改为后台线程执行，避免真实网络请求阻塞 Qt UI。
 - GUI 新增 provider 状态文本；运行中禁用 provider 选择和 Analyze 按钮，完成后显示成功或 unavailable/fallback 状态。
 - 自动化测试仍使用 fake HTTP transport 和缺 key fallback，不依赖真实 API key 或网络访问。
 
@@ -751,7 +752,7 @@ GeoTaskShield/gui/
   - `Simulation` tab 默认仿真；
   - `Batch Results` 加载 `phase5_batch_results.csv`、筛选、排序、导出 CSV、预览/导出 Markdown；
   - `Agent Assistant` 默认 `Local rule-based` 分析和导出 Markdown；
-  - `Aliyun Bailian (DashScope)` provider 的后台分析、超时配置、缺 key fallback 和状态提示；
+  - OpenAI-compatible provider 的后台分析、超时配置、缺 key fallback 和状态提示；
   - API key 只通过运行时环境变量配置，不写入仓库。
 - 发布包继续包含 demo CSV、batch report、README/HANDOFF/CHANGELOG 和 `docs/demo`。
 
@@ -761,6 +762,31 @@ GeoTaskShield/gui/
 - 不改 `SimulationEngine`、`PrivacyFactory`、`AssignmentAlgorithmFactory` 或 `BatchExperiment` 语义；
 - 不迁移 GoogleTest；
 - 不把 API key 写入仓库。
+
+---
+
+## 14.9. Provider Generalization
+
+目标：将真实 LLM provider 从 DashScope 专用产品命名升级为通用 OpenAI-compatible provider，同时保留现有 DashScope 演示路径和环境变量兼容性。
+
+本轮范围：
+
+- GUI provider 下拉项改为 `OpenAI Compatible`。
+- 主配置环境变量改为：
+  - `GTS_LLM_API_KEY`
+  - `GTS_LLM_MODEL`
+  - `GTS_LLM_BASE_URL`
+  - `GTS_LLM_TIMEOUT_MS`
+- 默认模型改为 `deepseek-v4-flash`。
+- 默认 base URL 继续使用 DashScope OpenAI-compatible endpoint：`https://dashscope.aliyuncs.com/compatible-mode/v1`。
+- 旧 `DASHSCOPE_*` 环境变量保留为兼容 fallback；当新旧变量同时存在时，`GTS_LLM_*` 优先。
+
+保持不变：
+
+- `Local rule-based` 仍是默认 provider。
+- API key 只通过运行时环境变量读取，不写入仓库。
+- provider 请求继续在 GUI 后台线程执行。
+- provider 失败、超时、空内容或异常结构继续显示本地规则分析 fallback。
 
 ---
 

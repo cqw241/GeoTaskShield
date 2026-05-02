@@ -160,8 +160,8 @@ int main(int argc, char** argv)
             "AgentAssistantWidget should expose input, analyze, preview, and export controls.");
     require(assistantWidget->hasProviderSelectionForTesting(),
             "AgentAssistantWidget should expose an assistant provider selector.");
-    require(assistantWidget->hasProviderOptionForTesting("Aliyun Bailian"),
-            "AgentAssistantWidget should include an Aliyun Bailian provider option.");
+    require(assistantWidget->hasProviderOptionForTesting("OpenAI Compatible"),
+            "AgentAssistantWidget should include a generic OpenAI-compatible provider option.");
     require(assistantWidget->hasProviderStatusForTesting(),
             "AgentAssistantWidget should expose visible provider status.");
     assistantWidget->setProviderForTesting("Local rule-based");
@@ -199,20 +199,21 @@ int main(int argc, char** argv)
                 "# GeoTaskShield Agent Assistant Analysis") != std::string::npos,
             "Exported assistant Markdown should contain the generated analysis.");
 
+    clearEnvValue("GTS_LLM_API_KEY");
     clearEnvValue("DASHSCOPE_API_KEY");
-    assistantWidget->setProviderForTesting("Aliyun Bailian");
-    assistantWidget->setPromptForTesting("Analyze current results with DashScope.");
+    assistantWidget->setProviderForTesting("OpenAI Compatible");
+    assistantWidget->setPromptForTesting("Analyze current results with the LLM provider.");
     assistantWidget->analyzeForTesting();
     require(assistantWidget->waitForAnalysisForTesting(2000),
-            "DashScope analysis without an API key should finish promptly.");
+            "OpenAI-compatible analysis without an API key should finish promptly.");
     require(!assistantWidget->isAnalyzingForTesting(),
-            "DashScope unavailable analysis should leave the widget idle.");
+            "OpenAI-compatible unavailable analysis should leave the widget idle.");
     require(assistantWidget->providerStatusForTesting().contains(
                 "unavailable", Qt::CaseInsensitive),
-            "DashScope unavailable analysis should update provider status.");
+            "OpenAI-compatible unavailable analysis should update provider status.");
     require(assistantWidget->analysisMarkdownForTesting().contains(
                 "LLM Provider Unavailable"),
-            "DashScope unavailable analysis should preview fallback Markdown.");
+            "OpenAI-compatible unavailable analysis should preview fallback Markdown.");
 
     return 0;
 }

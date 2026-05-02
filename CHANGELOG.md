@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Generalized the GUI LLM provider from DashScope-specific naming to `OpenAI Compatible`.
+- Added `GTS_LLM_API_KEY`, `GTS_LLM_MODEL`, `GTS_LLM_BASE_URL`, and `GTS_LLM_TIMEOUT_MS` as primary provider environment variables.
+- Kept `DASHSCOPE_*` environment variables as compatibility fallback values.
+- Updated the default provider model to `deepseek-v4-flash` while keeping the DashScope OpenAI-compatible endpoint as the default base URL.
+
 ## v0.10.0 - 2026-04-28
 
 ### Added
