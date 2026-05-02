@@ -19,6 +19,9 @@ namespace {
 
 std::string envValue(const std::string& name)
 {
+    if (name.empty()) {
+        return {};
+    }
 #ifdef _WIN32
     char* rawValue{};
     std::size_t valueSize{};
@@ -38,19 +41,32 @@ std::string envValue(const std::string& name)
 #endif
 }
 
-std::string effectiveValue(const std::string& envName,
-                           const std::string& fallback)
+std::string configuredEnvValue(const std::string& envName,
+                               const std::string& fallbackEnvName)
 {
     const std::string value = envValue(envName);
+    if (!value.empty()) {
+        return value;
+    }
+    return envValue(fallbackEnvName);
+}
+
+std::string effectiveValue(const std::string& envName,
+                           const std::string& fallbackEnvName,
+                           const std::string& fallback)
+{
+    const std::string value = configuredEnvValue(envName, fallbackEnvName);
     if (!value.empty()) {
         return value;
     }
     return fallback;
 }
 
-int effectivePositiveInt(const std::string& envName, int fallback)
+int effectivePositiveInt(const std::string& envName,
+                         const std::string& fallbackEnvName,
+                         int fallback)
 {
-    const std::string value = envValue(envName);
+    const std::string value = configuredEnvValue(envName, fallbackEnvName);
     if (value.empty()) {
         return fallback;
     }
@@ -341,12 +357,20 @@ AssistantResponse OpenAICompatibleAssistant::analyze(
     RuleBasedAssistant localAssistant;
     AssistantResponse response = localAssistant.analyze(request);
 
-    const std::string apiKey = envValue(config_.apiKeyEnvName);
+    const std::string apiKey =
+        configuredEnvValue(config_.apiKeyEnvName, config_.fallbackApiKeyEnvName);
     if (apiKey.empty()) {
+        std::string warning =
+            "Environment variable `" + config_.apiKeyEnvName +
+            "` is not set.";
+        if (!config_.fallbackApiKeyEnvName.empty()) {
+            warning += " Compatibility fallback `" +
+                       config_.fallbackApiKeyEnvName + "` is also empty.";
+        }
+        warning += " Configure it to enable the real LLM provider.";
         return unavailableResponse(
             std::move(response),
-            "Environment variable `" + config_.apiKeyEnvName +
-                "` is not set. Configure it to enable the real LLM provider.");
+            warning);
     }
     if (!httpClient_) {
         return unavailableResponse(std::move(response),
@@ -354,11 +378,15 @@ AssistantResponse OpenAICompatibleAssistant::analyze(
     }
 
     const std::string model =
-        effectiveValue(config_.modelEnvName, config_.defaultModel);
+        effectiveValue(config_.modelEnvName, config_.fallbackModelEnvName,
+                       config_.defaultModel);
     const std::string baseUrl =
-        effectiveValue(config_.baseUrlEnvName, config_.defaultBaseUrl);
+        effectiveValue(config_.baseUrlEnvName, config_.fallbackBaseUrlEnvName,
+                       config_.defaultBaseUrl);
     const int timeoutMs =
-        effectivePositiveInt(config_.timeoutMsEnvName, config_.requestTimeoutMs);
+        effectivePositiveInt(config_.timeoutMsEnvName,
+                             config_.fallbackTimeoutMsEnvName,
+                             config_.requestTimeoutMs);
 
     HttpRequest httpRequest;
     httpRequest.url = chatCompletionsUrl(baseUrl);

@@ -34,7 +34,7 @@ AgentAssistantWidget::AgentAssistantWidget(QWidget* parent)
     providerCombo_ = new QComboBox(this);
     providerCombo_->setObjectName("assistantProviderCombo");
     providerCombo_->addItem("Local rule-based", "local");
-    providerCombo_->addItem("Aliyun Bailian (DashScope)", "dashscope");
+    providerCombo_->addItem("OpenAI Compatible", "openai-compatible");
     providerStatusLabel_ = new QLabel("Local rule-based ready.", this);
     providerStatusLabel_->setObjectName("assistantProviderStatus");
     providerLayout->addWidget(providerLabel);
@@ -198,7 +198,7 @@ void AgentAssistantWidget::analyzePrompt()
     }
 
     if (providerCombo_ != nullptr &&
-        providerCombo_->currentData().toString() == "dashscope") {
+        providerCombo_->currentData().toString() == "openai-compatible") {
         startProviderAnalysis(std::move(request));
         return;
     } else {
@@ -213,7 +213,7 @@ void AgentAssistantWidget::startProviderAnalysis(AssistantRequest request)
         return;
     }
 
-    setAnalyzing(true, "Aliyun Bailian (DashScope) analyzing...");
+    setAnalyzing(true, "OpenAI Compatible provider analyzing...");
     QPointer<AgentAssistantWidget> widget(this);
     auto* thread = QThread::create([widget, request = std::move(request)]() mutable {
         OpenAICompatibleAssistant llmAssistant;
@@ -247,8 +247,8 @@ void AgentAssistantWidget::finishProviderAnalysis(AssistantResponse response)
     lastResponse_ = std::move(response);
     applyAssistantResponse(
         lastResponse_.success
-            ? "Aliyun Bailian (DashScope) analysis complete."
-            : "Aliyun Bailian (DashScope) unavailable; local fallback shown.");
+            ? "OpenAI Compatible provider analysis complete."
+            : "OpenAI Compatible provider unavailable; local fallback shown.");
 }
 
 void AgentAssistantWidget::applyAssistantResponse(const QString& statusText)

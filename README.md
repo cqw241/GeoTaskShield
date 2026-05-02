@@ -7,7 +7,7 @@
 
 GeoTaskShield 是一个使用 C++20、CMake 和 Qt Widgets 构建的隐私保护任务分配仿真系统。项目围绕移动群智感知场景中的一个核心问题展开：平台需要把感知任务分配给移动用户，但任务分配又依赖用户位置、任务距离、奖励、可靠性和隐私预算等敏感因素。系统通过可复现实验、算法对比、GUI 可视化、批量结果分析和 Markdown/CSV 报告导出，展示“隐私保护机制如何影响任务完成率、系统收益、公平性和用户隐私损失”。
 
-从技术路线看，GeoTaskShield 适合作为隐私计算、可信群智感知、C++ 软件工程、Qt GUI 系统开发和智能实验 Agent 的综合展示项目。当前版本已经形成可运行、可测试、可打包的桌面软件系统，并已经提供本地规则型 Agent、可选 DashScope LLM provider、当前筛选结果分析和 Markdown/CSV 报告导出等智能实验辅助能力。
+从技术路线看，GeoTaskShield 适合作为隐私计算、可信群智感知、C++ 软件工程、Qt GUI 系统开发和智能实验 Agent 的综合展示项目。当前版本已经形成可运行、可测试、可打包的桌面软件系统，并已经提供本地规则型 Agent、可选 OpenAI-compatible LLM provider、当前筛选结果分析和 Markdown/CSV 报告导出等智能实验辅助能力。
 
 ## 现实世界价值
 
@@ -23,7 +23,7 @@ GeoTaskShield 将这一矛盾抽象为可实验、可展示、可扩展的软件
 - **算法影响可比较**：支持多种隐私机制和任务分配算法的矩阵式对比。
 - **结果解释可视化**：Qt GUI 展示单次仿真地图、批量实验摘要、图表和表格。
 - **实验过程可复现**：固定随机种子、CSV/Markdown 导出和轻量测试让结果便于复查。
-- **智能实验辅助已落地**：当前已有本地规则型 Agent、Agent Assistant、可选 DashScope provider 和 Markdown 报告生成能力；默认离线可用，也可在用户显式配置环境变量后调用真实 LLM。
+- **智能实验辅助已落地**：当前已有本地规则型 Agent、Agent Assistant、可选 OpenAI-compatible provider 和 Markdown 报告生成能力；默认离线可用，也可在用户显式配置环境变量后调用真实 LLM。
 
 ## 阶段化技术路线
 
@@ -44,10 +44,10 @@ GeoTaskShield 当前已经具备智能实验助手的核心产品路径：
 - 当前 `agent` 模块支持自然语言实验请求解析。
 - 当前 `ReportGenerator` 支持 Markdown 报告生成。
 - 当前 GUI 已支持 Markdown 报告预览、导出和 `Agent Assistant` 自然语言分析入口。
-- 当前 `Agent Assistant` 默认使用本地规则型分析，并提供可选 Aliyun Bailian / DashScope OpenAI-compatible provider。
+- 当前 `Agent Assistant` 默认使用本地规则型分析，并提供可选 OpenAI-compatible provider。
 - 真实 provider 只在用户显式选择并配置运行时环境变量后调用，可用于解释当前 Batch Results、生成对比结论和提出下一轮实验建议。
 
-默认实现刻意不调用在线模型、不保存 API key。可选 DashScope provider 通过运行时环境变量读取密钥，例如 `DASHSCOPE_API_KEY`，避免把密钥写入源码、文档、测试或提交记录。
+默认实现刻意不调用在线模型、不保存 API key。可选 OpenAI-compatible provider 通过运行时环境变量读取密钥，例如 `GTS_LLM_API_KEY`，避免把密钥写入源码、文档、测试或提交记录。
 
 ## 系统能力概览
 
@@ -152,12 +152,12 @@ flowchart LR
 
 ### 5. Agent 可演进路线
 
-当前 Agent 默认使用本地规则型实现，避免依赖网络和密钥；同时提供可选 DashScope provider，用于在用户显式配置环境变量后接入真实 LLM。后续可在不破坏系统主干的情况下继续增强：
+当前 Agent 默认使用本地规则型实现，避免依赖网络和密钥；同时提供可选 OpenAI-compatible provider，用于在用户显式配置环境变量后接入真实 LLM。后续可在不破坏系统主干的情况下继续增强：
 
 - 更完整的 LLM prompt 到实验配置结构化解析。
 - 更细粒度的实验结果自动解释和摘要。
 - 多轮实验上下文和建议生成。
-- 更多 OpenAI-compatible provider 适配。
+- 更多 provider preset 和模型配置入口。
 
 ## 当前发布版本
 
@@ -169,7 +169,7 @@ flowchart LR
 - Markdown 报告预览。
 - Markdown 报告导出。
 - `Agent Assistant` 本地规则分析、Markdown 预览和导出。
-- 可选 Aliyun Bailian / DashScope provider，默认不作为主演示依赖，并支持超时配置、失败回退和 GUI 非阻塞分析。
+- 可选 OpenAI-compatible provider，默认不作为主演示依赖，并支持超时配置、失败回退和 GUI 非阻塞分析。
 - Qt-free 批量结果 CSV/Markdown 字符串生成。
 - v0.10.0 GUI 演示指南。
 
@@ -285,16 +285,16 @@ docs/demo/v0.10.0-gui-demo-guide.md
 
 ### 可选 LLM provider（Phase 12）
 
-`Agent Assistant` 默认使用 `Local rule-based`，因此 GUI 在没有网络访问、没有凭据的情况下仍可正常工作。如需使用阿里云百炼 / DashScope，在 provider 下拉框中选择 `Aliyun Bailian (DashScope)`，并在启动程序前配置以下环境变量：
+`Agent Assistant` 默认使用 `Local rule-based`，因此 GUI 在没有网络访问、没有凭据的情况下仍可正常工作。如需使用 OpenAI-compatible 服务，在 provider 下拉框中选择 `OpenAI Compatible`，并在启动程序前配置以下环境变量：
 
 ```powershell
-$env:DASHSCOPE_API_KEY = "<your DashScope API key>"
-$env:DASHSCOPE_MODEL = "kimi-k2.5"
-$env:DASHSCOPE_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-$env:DASHSCOPE_TIMEOUT_MS = "15000"
+$env:GTS_LLM_API_KEY = "<your API key>"
+$env:GTS_LLM_MODEL = "deepseek-v4-flash"
+$env:GTS_LLM_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+$env:GTS_LLM_TIMEOUT_MS = "15000"
 ```
 
-真实 provider 必须配置 `DASHSCOPE_API_KEY`。`DASHSCOPE_MODEL` 默认使用 `kimi-k2.5`，`DASHSCOPE_BASE_URL` 默认使用 DashScope 的 OpenAI-compatible endpoint，`DASHSCOPE_TIMEOUT_MS` 默认使用 `15000` 毫秒。API key 必须只保存在本机运行环境变量中，不得写入源码、文档、测试、报告或提交记录。
+真实 provider 必须配置 `GTS_LLM_API_KEY`。`GTS_LLM_MODEL` 默认使用 `deepseek-v4-flash`，`GTS_LLM_BASE_URL` 默认使用 DashScope 的 OpenAI-compatible endpoint，`GTS_LLM_TIMEOUT_MS` 默认使用 `15000` 毫秒。旧版 `DASHSCOPE_API_KEY`、`DASHSCOPE_MODEL`、`DASHSCOPE_BASE_URL`、`DASHSCOPE_TIMEOUT_MS` 仍作为兼容 fallback；当 `GTS_LLM_*` 和 `DASHSCOPE_*` 同时存在时，优先使用 `GTS_LLM_*`。API key 必须只保存在本机运行环境变量中，不得写入源码、文档、测试、报告或提交记录。
 
 如果真实 provider 缺少 API key、请求失败、超时、返回空内容或返回非预期结构，`Agent Assistant` 会显示本地规则分析 fallback，而不是中断 GUI。真实 provider 分析在 GUI 后台线程中执行，点击 `Analyze` 后界面会显示 provider 状态，避免窗口在网络请求期间阻塞。
 
@@ -306,7 +306,7 @@ $env:DASHSCOPE_TIMEOUT_MS = "15000"
 对比三种隐私机制，50个用户，20个任务，使用最近贪心
 ```
 
-默认 Agent 使用本地规则解析；`Agent Assistant` 可选接入 DashScope provider，但只有用户显式选择并配置环境变量时才会调用在线服务。
+默认 Agent 使用本地规则解析；`Agent Assistant` 可选接入 OpenAI-compatible provider，但只有用户显式选择并配置环境变量时才会调用在线服务。
 
 ## 版本演进
 
@@ -333,7 +333,7 @@ $env:DASHSCOPE_TIMEOUT_MS = "15000"
 - 核心测试使用轻量自定义断言，尚未迁移到 GoogleTest 或 Catch2。
 - Hungarian 算法当前支持一任务对应一个展开 worker slot，不是严格多 worker 协同任务优化模型。
 - Laplace 隐私是仿真层面的坐标扰动，不是完整差分隐私证明实现。
-- Agent 和 Agent Assistant 默认使用本地规则型实现；DashScope provider 为可选入口，只从环境变量读取 API key 和运行时配置，不保存密钥。
+- Agent 和 Agent Assistant 默认使用本地规则型实现；OpenAI-compatible provider 为可选入口，只从环境变量读取 API key 和运行时配置，不保存密钥。
 - Batch Results 图表使用自绘轻量柱状图，尚未引入 Qt Graphs 或 Qt Charts。
 
 ## 后续扩展建议

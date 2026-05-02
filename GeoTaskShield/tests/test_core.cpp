@@ -460,9 +460,15 @@ int main()
     missingKeyConfig.apiKeyEnvName = "GEOTASKSHIELD_TEST_MISSING_API_KEY";
     missingKeyConfig.modelEnvName = "GEOTASKSHIELD_TEST_MISSING_MODEL";
     missingKeyConfig.baseUrlEnvName = "GEOTASKSHIELD_TEST_MISSING_BASE_URL";
+    missingKeyConfig.timeoutMsEnvName = "GEOTASKSHIELD_TEST_MISSING_TIMEOUT_MS";
+    missingKeyConfig.fallbackApiKeyEnvName = "";
+    missingKeyConfig.fallbackModelEnvName = "";
+    missingKeyConfig.fallbackBaseUrlEnvName = "";
+    missingKeyConfig.fallbackTimeoutMsEnvName = "";
     clearEnvValue(missingKeyConfig.apiKeyEnvName);
     clearEnvValue(missingKeyConfig.modelEnvName);
     clearEnvValue(missingKeyConfig.baseUrlEnvName);
+    clearEnvValue(missingKeyConfig.timeoutMsEnvName);
     auto missingKeyHttp = std::make_shared<FakeHttpClient>();
     OpenAICompatibleAssistant missingKeyAssistant(missingKeyConfig, missingKeyHttp);
     const AssistantResponse missingKeyResponse =
@@ -480,6 +486,10 @@ int main()
     llmConfig.modelEnvName = "GEOTASKSHIELD_TEST_MODEL";
     llmConfig.baseUrlEnvName = "GEOTASKSHIELD_TEST_BASE_URL";
     llmConfig.timeoutMsEnvName = "GEOTASKSHIELD_TEST_TIMEOUT_MS";
+    llmConfig.fallbackApiKeyEnvName = "";
+    llmConfig.fallbackModelEnvName = "";
+    llmConfig.fallbackBaseUrlEnvName = "";
+    llmConfig.fallbackTimeoutMsEnvName = "";
     llmConfig.defaultBaseUrl = "https://dashscope.example.test/compatible-mode/v1/";
     llmConfig.defaultModel = "fallback-model";
     llmConfig.requestTimeoutMs = 4321;
@@ -563,6 +573,91 @@ int main()
     clearEnvValue(llmConfig.apiKeyEnvName);
     clearEnvValue(llmConfig.modelEnvName);
     clearEnvValue(llmConfig.timeoutMsEnvName);
+
+    LLMProviderConfig defaultProviderConfig;
+    clearEnvValue("GTS_LLM_API_KEY");
+    clearEnvValue("GTS_LLM_MODEL");
+    clearEnvValue("GTS_LLM_BASE_URL");
+    clearEnvValue("GTS_LLM_TIMEOUT_MS");
+    clearEnvValue("DASHSCOPE_API_KEY");
+    clearEnvValue("DASHSCOPE_MODEL");
+    clearEnvValue("DASHSCOPE_BASE_URL");
+    clearEnvValue("DASHSCOPE_TIMEOUT_MS");
+    setEnvValue("GTS_LLM_API_KEY", "generic-key");
+    auto defaultProviderHttp = std::make_shared<FakeHttpClient>();
+    defaultProviderHttp->response =
+        HttpResponse{true, 200,
+                     R"({"choices":[{"message":{"content":"# Generic LLM"}}]})",
+                     {}};
+    OpenAICompatibleAssistant defaultProviderAssistant(defaultProviderConfig,
+                                                       defaultProviderHttp);
+    const AssistantResponse defaultProviderResponse =
+        defaultProviderAssistant.analyze(llmRequest);
+    require(defaultProviderResponse.success,
+            "OpenAI-compatible provider should use the generic API key environment variable.");
+    require(defaultProviderHttp->lastRequest.url ==
+                "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+            "OpenAI-compatible provider should keep the DashScope-compatible endpoint as the default.");
+    require(contains(defaultProviderHttp->lastRequest.body,
+                     R"("model":"deepseek-v4-flash")"),
+            "OpenAI-compatible provider should default to deepseek-v4-flash.");
+
+    clearEnvValue("GTS_LLM_API_KEY");
+    setEnvValue("DASHSCOPE_API_KEY", "legacy-key");
+    setEnvValue("DASHSCOPE_MODEL", "legacy-model");
+    setEnvValue("DASHSCOPE_BASE_URL", "https://legacy.example.test/v1");
+    setEnvValue("DASHSCOPE_TIMEOUT_MS", "9876");
+    defaultProviderHttp->response =
+        HttpResponse{true, 200,
+                     R"({"choices":[{"message":{"content":"# Legacy LLM"}}]})",
+                     {}};
+    const AssistantResponse legacyProviderResponse =
+        defaultProviderAssistant.analyze(llmRequest);
+    require(legacyProviderResponse.success,
+            "OpenAI-compatible provider should keep DASHSCOPE_* as compatibility fallback.");
+    require(hasHeader(defaultProviderHttp->lastRequest.headers, "Authorization",
+                      "Bearer legacy-key"),
+            "OpenAI-compatible provider should read legacy API keys when generic keys are absent.");
+    require(defaultProviderHttp->lastRequest.url ==
+                "https://legacy.example.test/v1/chat/completions",
+            "OpenAI-compatible provider should read the legacy base URL fallback.");
+    require(contains(defaultProviderHttp->lastRequest.body,
+                     R"("model":"legacy-model")"),
+            "OpenAI-compatible provider should read the legacy model fallback.");
+    require(defaultProviderHttp->lastRequest.timeoutMs == 9876,
+            "OpenAI-compatible provider should read the legacy timeout fallback.");
+
+    setEnvValue("GTS_LLM_API_KEY", "generic-key");
+    setEnvValue("GTS_LLM_MODEL", "generic-model");
+    setEnvValue("GTS_LLM_BASE_URL", "https://generic.example.test/v1");
+    setEnvValue("GTS_LLM_TIMEOUT_MS", "6789");
+    defaultProviderHttp->response =
+        HttpResponse{true, 200,
+                     R"({"choices":[{"message":{"content":"# Generic LLM"}}]})",
+                     {}};
+    const AssistantResponse genericProviderResponse =
+        defaultProviderAssistant.analyze(llmRequest);
+    require(genericProviderResponse.success,
+            "OpenAI-compatible provider should prefer GTS_LLM_* over DASHSCOPE_*.");
+    require(hasHeader(defaultProviderHttp->lastRequest.headers, "Authorization",
+                      "Bearer generic-key"),
+            "OpenAI-compatible provider should prefer the generic API key.");
+    require(defaultProviderHttp->lastRequest.url ==
+                "https://generic.example.test/v1/chat/completions",
+            "OpenAI-compatible provider should prefer the generic base URL.");
+    require(contains(defaultProviderHttp->lastRequest.body,
+                     R"("model":"generic-model")"),
+            "OpenAI-compatible provider should prefer the generic model.");
+    require(defaultProviderHttp->lastRequest.timeoutMs == 6789,
+            "OpenAI-compatible provider should prefer the generic timeout.");
+    clearEnvValue("GTS_LLM_API_KEY");
+    clearEnvValue("GTS_LLM_MODEL");
+    clearEnvValue("GTS_LLM_BASE_URL");
+    clearEnvValue("GTS_LLM_TIMEOUT_MS");
+    clearEnvValue("DASHSCOPE_API_KEY");
+    clearEnvValue("DASHSCOPE_MODEL");
+    clearEnvValue("DASHSCOPE_BASE_URL");
+    clearEnvValue("DASHSCOPE_TIMEOUT_MS");
 
     BatchExperimentRunner batchRunner;
     std::vector<ExperimentScenario> scenarios{
