@@ -1,9 +1,9 @@
 # GeoTaskShield 项目交接文档
 
-更新时间：2026-04-28
+更新时间：2026-05-03
 项目路径：`D:\VS2026_Projects\GeoTaskShield`
-当前状态：阶段 1 至阶段 13 已完成并通过本地验收，`v0.10.0` 已合并回 `main`。当前正在 `develop` 上把真实 LLM provider 从 DashScope 专用产品文案泛化为 OpenAI-compatible provider。
-当前开发分支：`develop`
+当前状态：阶段 1 至阶段 14 已完成本地验收。`v0.10.1` 是稳定化补丁版本，固化 OpenAI-compatible provider 泛化文档、核心测试拆分、验证脚本、CI 和历史规划文件归档，不改变运行时仿真或 GUI 语义。
+当前开发分支：`release/v0.10.1`
 
 ---
 
@@ -38,8 +38,8 @@ GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配
 
 | 分支 | 说明 |
 |---|---|
-| `main` | `v0.9.0` 发布基线，远端默认分支；包含发布后的 README 补充和 Simulation map legend |
-| `develop` | 本地已快进同步到 `main`，作为下一阶段 `feature/*` 起点 |
+| `main` | 远端默认分支；已包含 `v0.10.0` 后的 OpenAI-compatible provider 泛化合并 |
+| `develop` | 已包含 provider generalization，作为后续 `feature/*` 或 `release/*` 起点 |
 | `feature/phase3-qt-gui` | 阶段 3 功能分支，提交 `3b66cbf feat(gui): add Qt Widgets simulation UI` |
 | `feature/phase4-ai-agent-report` | 阶段 4 功能分支 |
 | `feature/phase5-experiment-enhancements` | 阶段 5 功能分支，已合入 `develop` |
@@ -51,6 +51,7 @@ GeoTaskShield 是一个面向移动群智感知场景的隐私保护任务分配
 | `release/v0.8.0` | 阶段 10 / `v0.8.0` 发布准备分支 |
 | `release/v0.9.0` | Demo Readiness / `v0.9.0` 发布准备分支，已完成 |
 | `release/v0.10.0` | Phase 13 provider hardening / `v0.10.0` 发布准备分支 |
+| `release/v0.10.1` | Phase 14 stabilization and release hygiene / `v0.10.1` 发布准备分支 |
 
 后续 Git 操作要求：
 
@@ -71,15 +72,13 @@ GeoTaskShield/
   GeoTaskShield.md
   HANDOFF.md
   git_guide.md
-  task_plan.md
-  findings.md
-  progress.md
   phase2_results.csv
   docs/
     demo/
     superpowers/
       specs/
       plans/
+      history/
   GeoTaskShield/
     CMakeLists.txt
     app/
@@ -95,7 +94,12 @@ GeoTaskShield/
     agent/
     experiment/
     gui/
-    tests/test_core.cpp
+    tests/
+      TestSupport.h
+      test_model.cpp
+      test_algorithms.cpp
+      test_experiment.cpp
+      test_agent.cpp
 ```
 
 核心目录说明：
@@ -112,7 +116,7 @@ GeoTaskShield/
 | `gui` | Qt Widgets 桌面 GUI |
 | `app/console` | 控制台实验入口 |
 | `app/agent_demo` | AIAgent 报告生成 demo 入口 |
-| `tests` | 当前核心测试入口 |
+| `tests` | Qt-free 核心测试入口，按 model / algorithm / experiment / agent 拆分 |
 
 ---
 
@@ -146,7 +150,7 @@ GeoTaskShield/
 - CMake 结构：
   - `GeoTaskShieldCore` 静态库
   - `GeoTaskShield` 控制台可执行程序
-  - `GeoTaskShieldTests` 测试目标
+  - `GeoTaskShieldCoreModelTests` / `GeoTaskShieldCoreAlgorithmTests` / `GeoTaskShieldCoreExperimentTests` / `GeoTaskShieldCoreAgentTests` 测试目标
 
 ---
 
@@ -263,7 +267,7 @@ D:\VS2026_Projects\GeoTaskShield\out\build\x64-debug-qt\GeoTaskShield\GeoTaskShi
 
 注意：
 
-- `GeoTaskShield.exe` 和 `GeoTaskShieldTests.exe` 不是 Qt 程序，不需要 `windeployqt`；
+- `GeoTaskShield.exe` 和 Qt-free core test 可执行程序不是 Qt 程序，不需要 `windeployqt`；
 - 只有 `GeoTaskShieldGui.exe` 和 GUI smoke test 需要 Qt 运行时；
 - CTest 已为 GUI smoke test 注入 Qt runtime 路径，避免缺失 `Qt6Core.dll` 弹窗阻塞。
 
@@ -790,6 +794,38 @@ GeoTaskShield/gui/
 
 ---
 
+## 14.10. Phase 14: Stabilization and Release Hygiene
+
+目标：把 `v0.10.x` 发布线整理为一个小而稳定的 `v0.10.1` 补丁版本，只做发布卫生、测试可维护性和验证可靠性改进，不改变核心仿真、隐私机制、分配算法、GUI 行为或 provider 运行时契约。
+
+本轮范围：
+
+- 项目版本更新为 `0.10.1`。
+- Windows 打包默认版本更新为 `v0.10.1`。
+- `CHANGELOG.md` 将 provider generalization 从 `Unreleased` 固化到 `v0.10.1 - 2026-05-03`。
+- 根目录历史规划文件移动到 `docs/superpowers/history/`：
+  - `task_plan.md`
+  - `findings.md`
+  - `progress.md`
+- 核心测试从单个 `test_core.cpp` 拆分为四个 Qt-free CTest 目标：
+  - `GeoTaskShieldCoreModelTests`
+  - `GeoTaskShieldCoreAlgorithmTests`
+  - `GeoTaskShieldCoreExperimentTests`
+  - `GeoTaskShieldCoreAgentTests`
+- 新增 `scripts/verify_phase14.ps1`，用于本地运行非 Qt Debug 和 Qt Debug 验收。
+- 新增 `.github/workflows/windows-core.yml`，只覆盖 Windows 非 Qt CMake/CTest，不引入 Qt CI。
+
+保持不变：
+
+- 不新增算法；
+- 不改 `SimulationEngine`、`PrivacyFactory`、`AssignmentAlgorithmFactory` 或 `BatchExperiment` 语义；
+- 不改 GUI 行为；
+- 不迁移 GoogleTest/Catch2；
+- 不把 API key 写入仓库；
+- `DASHSCOPE_*` 仍只作为 `GTS_LLM_*` 缺失时的兼容 fallback。
+
+---
+
 ## 15. 构建与验收方式
 
 推荐在 Visual Studio Developer Command Prompt 或通过 `VsDevCmd.bat` 加载 MSVC 环境后执行。
@@ -803,8 +839,11 @@ cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Too
 验收结果：
 
 ```text
-1/1 Test #1: GeoTaskShieldCoreTests Passed
-100% tests passed, 0 tests failed out of 1
+1/4 Test #1: GeoTaskShieldCoreModelTests ........ Passed
+2/4 Test #2: GeoTaskShieldCoreAlgorithmTests .... Passed
+3/4 Test #3: GeoTaskShieldCoreExperimentTests ... Passed
+4/4 Test #4: GeoTaskShieldCoreAgentTests ........ Passed
+100% tests passed, 0 tests failed out of 4
 ```
 
 ### 15.2 Agent demo
@@ -843,7 +882,7 @@ cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Too
 验收结果：
 
 ```text
-2/2 tests passed
+5/5 tests passed
 ```
 
 运行 GUI：
@@ -875,7 +914,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package_windows.ps1
 默认输出：
 
 ```text
-out\package\GeoTaskShield-v0.10.0-windows-x64.zip
+out\package\GeoTaskShield-v0.10.1-windows-x64.zip
 ```
 
 打包输出位于 `out/`，属于生成产物，不提交进 Git。
@@ -888,8 +927,12 @@ out\package\GeoTaskShield-v0.10.0-windows-x64.zip
    - `model`、`simulation`、`privacy`、`assignment`、`evaluation`、`data`、`agent` 均为纯 C++。
    - Qt 类型只应出现在 `gui` 模块。
 
-2. 当前测试仍是轻量自定义测试。
-   - 文件：`GeoTaskShield/tests/test_core.cpp`
+2. 当前测试仍是轻量自定义测试，但核心测试已按职责拆分。
+   - 文件：`GeoTaskShield/tests/test_model.cpp`
+   - 文件：`GeoTaskShield/tests/test_algorithms.cpp`
+   - 文件：`GeoTaskShield/tests/test_experiment.cpp`
+   - 文件：`GeoTaskShield/tests/test_agent.cpp`
+   - 共享工具：`GeoTaskShield/tests/TestSupport.h`
    - GUI smoke test：`GeoTaskShield/gui/tests/test_gui_smoke.cpp`
    - 未引入 GoogleTest/Catch2。
 
@@ -923,9 +966,9 @@ out\package\GeoTaskShield-v0.10.0-windows-x64.zip
 
 ## 17. 建议下一步
 
-Phase 13 稳定后可继续考虑：
+Phase 14 稳定后可继续考虑：
 
-1. 拆分当前较大的 `GeoTaskShield/tests/test_core.cpp`，或评估是否迁移到 GoogleTest/Catch2；
+1. 评估是否从轻量自定义测试迁移到 GoogleTest/Catch2；
 2. 支持多轮实验助手上下文和更细粒度的实验参数建议；
 3. 扩展更多隐私保护机制和任务分配算法；
-4. 如后续需要论文级图表或复杂交互分析，再评估 Qt Graphs / Qt Charts；当前自绘柱状图足够支撑 `v0.10.0` 演示。
+4. 如后续需要论文级图表或复杂交互分析，再评估 Qt Graphs / Qt Charts；当前自绘柱状图足够支撑 `v0.10.x` 演示。
