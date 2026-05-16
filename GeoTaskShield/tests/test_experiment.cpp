@@ -2,8 +2,12 @@
 #include "experiment/BatchExperimentExporter.h"
 #include "experiment/BatchResultCsvLoader.h"
 #include "experiment/BatchResultModel.h"
+#include "experiment/ExperimentPlan.h"
 #include "tests/TestSupport.h"
 
+#include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -159,6 +163,230 @@ int main()
                 contains(bars[0].label, "Grid Privacy") &&
                 contains(bars[0].label, "Nearest Greedy"),
             "BatchResultModel should build chart labels from scenario, privacy, and algorithm.");
+
+    const std::string validPlanJson = R"({
+  "name": "core plan",
+  "run_label": "core-run",
+  "workers": [8, 12],
+  "tasks": [3],
+  "seeds": [11, 12],
+  "privacy": ["grid", "laplace"],
+  "algorithms": ["nearest", "score"],
+  "grid_size": [5.0],
+  "k": [3],
+  "epsilon": [0.5, 1.0],
+  "areaWidth": 80.0,
+  "areaHeight": 90.0
+})";
+    const ExperimentPlanLoadResult validPlanLoad =
+        ExperimentPlanLoader::loadFromString(validPlanJson);
+    require(validPlanLoad.success, validPlanLoad.errorMessage);
+    require(validPlanLoad.plan.name == "core plan",
+            "ExperimentPlanLoader should parse plan name.");
+    require(validPlanLoad.plan.runLabel == "core-run",
+            "ExperimentPlanLoader should parse run label.");
+    const std::vector<ExperimentScenario> expanded =
+        validPlanLoad.plan.expandToScenarios();
+    require(expanded.size() == 32,
+            "ExperimentPlan should expand workers, tasks, seeds, privacy, algorithms, grid_size, k, and epsilon as a Cartesian product.");
+    require(expanded.front().config.workerCount == 8 &&
+                expanded.front().config.taskCount == 3 &&
+                expanded.front().config.randomSeed == 11 &&
+                expanded.front().privacyType == "grid" &&
+                expanded.front().algorithmType == "nearest" &&
+                near(expanded.front().config.privacy.gridSize, 5.0) &&
+                expanded.front().config.privacy.k == 3 &&
+                near(expanded.front().config.privacy.epsilon, 0.5) &&
+                near(expanded.front().config.areaWidth, 80.0) &&
+                near(expanded.front().config.areaHeight, 90.0),
+            "ExperimentPlan should apply parsed values to expanded scenarios.");
+    require(expanded.back().config.workerCount == 12 &&
+                expanded.back().config.randomSeed == 12 &&
+                expanded.back().privacyType == "laplace" &&
+                expanded.back().algorithmType == "score" &&
+                near(expanded.back().config.privacy.epsilon, 1.0),
+            "ExperimentPlan should include the last Cartesian product combination.");
+    const std::vector<ExperimentScenario> expandedAgain =
+        validPlanLoad.plan.expandToScenarios();
+    require(expandedAgain.size() == expanded.size() &&
+                expandedAgain.front().name == expanded.front().name &&
+                expandedAgain.back().name == expanded.back().name,
+            "ExperimentPlan expansion should be stable across repeated calls.");
+
+    const ExperimentPlanLoadResult missingFieldLoad =
+        ExperimentPlanLoader::loadFromString(R"({
+  "name": "missing",
+  "workers": [8],
+  "tasks": [3],
+  "seeds": [11],
+  "privacy": ["grid"],
+  "grid_size": [5.0],
+  "k": [3],
+  "epsilon": [1.0]
+})");
+    require(!missingFieldLoad.success,
+            "ExperimentPlanLoader should reject missing required fields.");
+    require(contains(missingFieldLoad.errorMessage, "algorithms"),
+            "Missing-field errors should name the missing field.");
+
+    const ExperimentPlanLoadResult emptyListLoad =
+        ExperimentPlanLoader::loadFromString(R"({
+  "name": "empty-list",
+  "workers": [],
+  "tasks": [3],
+  "seeds": [11],
+  "privacy": ["grid"],
+  "algorithms": ["nearest"],
+  "grid_size": [5.0],
+  "k": [3],
+  "epsilon": [1.0]
+})");
+    require(!emptyListLoad.success,
+            "ExperimentPlanLoader should reject empty parameter lists.");
+    require(contains(emptyListLoad.errorMessage, "workers"),
+            "Empty-list errors should name the empty field.");
+
+    const ExperimentPlanLoadResult unknownPrivacyLoad =
+        ExperimentPlanLoader::loadFromString(R"({
+  "name": "bad-privacy",
+  "workers": [8],
+  "tasks": [3],
+  "seeds": [11],
+  "privacy": ["masked"],
+  "algorithms": ["nearest"],
+  "grid_size": [5.0],
+  "k": [3],
+  "epsilon": [1.0]
+})");
+    require(!unknownPrivacyLoad.success,
+            "ExperimentPlanLoader should reject unknown privacy mechanisms.");
+    require(contains(unknownPrivacyLoad.errorMessage, "masked"),
+            "Unknown privacy errors should include the invalid value.");
+
+    const ExperimentPlanLoadResult unknownAlgorithmLoad =
+        ExperimentPlanLoader::loadFromString(R"({
+  "name": "bad-algorithm",
+  "workers": [8],
+  "tasks": [3],
+  "seeds": [11],
+  "privacy": ["grid"],
+  "algorithms": ["auction"],
+  "grid_size": [5.0],
+  "k": [3],
+  "epsilon": [1.0]
+})");
+    require(!unknownAlgorithmLoad.success,
+            "ExperimentPlanLoader should reject unknown assignment algorithms.");
+    require(contains(unknownAlgorithmLoad.errorMessage, "auction"),
+            "Unknown algorithm errors should include the invalid value.");
+
+    const auto requireInvalidPlanValue =
+        [](const std::string& json,
+           const std::string& fieldName,
+           const std::string& invalidValue) {
+            const ExperimentPlanLoadResult load =
+                ExperimentPlanLoader::loadFromString(json);
+            require(!load.success,
+                    "ExperimentPlanLoader should reject invalid " + fieldName + " values.");
+            require(contains(load.errorMessage, fieldName) &&
+                        contains(load.errorMessage, invalidValue),
+                    "Invalid " + fieldName + " errors should include the field name and illegal value.");
+        };
+    requireInvalidPlanValue(R"({
+  "name": "invalid-workers",
+  "workers": [0],
+  "tasks": [3],
+  "seeds": [11],
+  "privacy": ["grid"],
+  "algorithms": ["nearest"],
+  "grid_size": [5.0],
+  "k": [3],
+  "epsilon": [1.0]
+})", "workers", "0");
+    requireInvalidPlanValue(R"({
+  "name": "invalid-tasks",
+  "workers": [8],
+  "tasks": [-1],
+  "seeds": [11],
+  "privacy": ["grid"],
+  "algorithms": ["nearest"],
+  "grid_size": [5.0],
+  "k": [3],
+  "epsilon": [1.0]
+})", "tasks", "-1");
+    requireInvalidPlanValue(R"({
+  "name": "invalid-grid",
+  "workers": [8],
+  "tasks": [3],
+  "seeds": [11],
+  "privacy": ["grid"],
+  "algorithms": ["nearest"],
+  "grid_size": [0],
+  "k": [3],
+  "epsilon": [1.0]
+})", "grid_size", "0");
+    requireInvalidPlanValue(R"({
+  "name": "invalid-epsilon",
+  "workers": [8],
+  "tasks": [3],
+  "seeds": [11],
+  "privacy": ["grid"],
+  "algorithms": ["nearest"],
+  "grid_size": [5.0],
+  "k": [3],
+  "epsilon": [0]
+})", "epsilon", "0");
+    requireInvalidPlanValue(R"({
+  "name": "invalid-area",
+  "workers": [8],
+  "tasks": [3],
+  "seeds": [11],
+  "privacy": ["grid"],
+  "algorithms": ["nearest"],
+  "grid_size": [5.0],
+  "k": [3],
+  "epsilon": [1.0],
+  "areaWidth": 0
+})", "areaWidth", "0");
+
+    const std::filesystem::path runDir =
+        std::filesystem::temp_directory_path() / "gts_experiment_plan_run";
+    std::filesystem::remove_all(runDir);
+    ExperimentPlan archivePlan;
+    archivePlan.name = "Archive Plan";
+    archivePlan.runLabel = "Archive Run";
+    archivePlan.workers = {8};
+    archivePlan.tasks = {3};
+    archivePlan.seeds = {11};
+    archivePlan.privacyMechanisms = {"grid"};
+    archivePlan.assignmentAlgorithms = {"nearest"};
+    archivePlan.gridSizes = {5.0};
+    archivePlan.kValues = {3};
+    archivePlan.epsilons = {1.0};
+    archivePlan.sourceJson = validPlanJson;
+    const ExperimentPlanRunResult runResult =
+        ExperimentPlanRunner::runToDirectory(archivePlan, runDir.string(), "test-version");
+    require(runResult.success, runResult.errorMessage);
+    require(runResult.scenarioCount == 1,
+            "ExperimentPlanRunner should report the expanded scenario count.");
+    require(std::filesystem::exists(runDir / "results.csv"),
+            "ExperimentPlanRunner should export results.csv.");
+    require(std::filesystem::exists(runDir / "report.md"),
+            "ExperimentPlanRunner should export report.md.");
+    require(std::filesystem::exists(runDir / "plan_snapshot.json"),
+            "ExperimentPlanRunner should export plan_snapshot.json.");
+    require(std::filesystem::exists(runDir / "metadata.json"),
+            "ExperimentPlanRunner should export metadata.json.");
+    {
+        std::ifstream metadataFile(runDir / "metadata.json");
+        const std::string metadata((std::istreambuf_iterator<char>(metadataFile)),
+                                   std::istreambuf_iterator<char>());
+        require(contains(metadata, "\"scenario_count\": 1"),
+                "ExperimentPlanRunner metadata should include scenario count.");
+        require(contains(metadata, "\"project_version\": \"test-version\""),
+                "ExperimentPlanRunner metadata should include project version.");
+    }
+    std::filesystem::remove_all(runDir);
 
     return 0;
 }

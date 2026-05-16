@@ -24,6 +24,7 @@ set(GEOTASKSHIELD_CORE_SOURCES
     "agent/WinHttpClient.cpp"
     "experiment/BatchExperiment.cpp"
     "experiment/BatchExperimentExporter.cpp"
+    "experiment/ExperimentPlan.cpp"
     "experiment/BatchResultCsvLoader.cpp"
     "experiment/BatchResultModel.cpp"
 )
@@ -68,6 +69,8 @@ geotaskshield_apply_common_options(GeoTaskShieldAgentDemo)
 add_executable(GeoTaskShieldBatchDemo "app/batch_demo/main.cpp")
 target_link_libraries(GeoTaskShieldBatchDemo PRIVATE GeoTaskShieldCore)
 target_compile_features(GeoTaskShieldBatchDemo PRIVATE cxx_std_20)
+target_compile_definitions(GeoTaskShieldBatchDemo PRIVATE
+    GEOTASKSHIELD_PROJECT_VERSION="${PROJECT_VERSION}")
 geotaskshield_apply_common_options(GeoTaskShieldBatchDemo)
 
 if (BUILD_TESTING)
@@ -155,4 +158,7 @@ install(FILES
     DESTINATION share/GeoTaskShield)
 
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/docs/demo"
+    DESTINATION share/GeoTaskShield/docs)
+
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/docs/examples"
     DESTINATION share/GeoTaskShield/docs)

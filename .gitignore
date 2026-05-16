@@ -1,6 +1,7 @@
 # Build output
 out/
 build/
+runs/
 
 # Visual Studio local state
 .vs/

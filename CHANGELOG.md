@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Added
+
+- Added Qt-free experiment plan loading and expansion for reproducible batch experiment runs.
+- Added reproducible run archive output with `results.csv`, `report.md`, `plan_snapshot.json`, and `metadata.json`.
+- Added sample plan file: `docs/examples/experiment_plan_basic.json`.
+- Added `GeoTaskShieldBatchDemo --plan <path>` with optional `--output <directory>` for plan-driven batch runs.
+
+### Changed
+
+- Experiment plan loading now validates numeric parameters before running scenarios, including workers, tasks, seeds, grid size, k, epsilon, and optional area dimensions.
+
 ## v0.10.1 - 2026-05-03
 
 ### Added

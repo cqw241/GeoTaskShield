@@ -219,6 +219,40 @@ cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Too
 out\build\x64-debug\GeoTaskShield\GeoTaskShield.exe
 ```
 
+### Experiment plan runs
+
+`GeoTaskShieldBatchDemo` still supports the legacy no-argument batch run and writes:
+
+```text
+phase5_batch_results.csv
+phase5_batch_report.md
+```
+
+It can also run a reproducible experiment plan from a small hand-written JSON file:
+
+```powershell
+out\build\x64-debug\GeoTaskShield\GeoTaskShieldBatchDemo.exe --plan docs\examples\experiment_plan_basic.json
+```
+
+By default, plan-driven runs are archived under `runs/<run_label-or-plan-name>/`. A custom archive directory can be selected with `--output`:
+
+```powershell
+out\build\x64-debug\GeoTaskShield\GeoTaskShieldBatchDemo.exe --plan docs\examples\experiment_plan_basic.json --output runs\my-run
+```
+
+If the same `run_label` or `--output` directory is reused, the runner overwrites the same output filenames in that directory. Use a different `run_label` or `--output` path when you need to keep multiple archives side by side.
+
+Each run directory contains:
+
+```text
+results.csv
+report.md
+plan_snapshot.json
+metadata.json
+```
+
+Plan files support list values such as `[50, 100]` and numeric range objects such as `{"start": 50, "end": 100, "step": 50}` for numeric fields. The supported strategy values are `grid`, `k-anonymity`, `laplace`, `nearest`, `score`, and `hungarian`. With the same plan and seeds, core result columns are deterministic; `algorithm_runtime_ms` and metadata timestamps can vary between runs.
+
 ### Qt Debug 构建与 GUI smoke test
 
 ```powershell
