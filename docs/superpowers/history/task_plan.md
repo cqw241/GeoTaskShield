@@ -16,6 +16,12 @@ Demo Readiness in progress on `release/v0.9.0`
 - Generate and inspect a runnable Windows release package.
 - Ensure the provided DashScope API key is not present in repository files or package contents.
 
+## Interview Architecture Briefing Success Criteria
+- Understand GeoTaskShield from repository docs and source structure before summarizing.
+- Explain the project in interview-friendly terms: problem, architecture, modules, data flow, completed phases, and future LLM/Agent direction.
+- Tie the explanation to an undergraduate C++ developer role: likely responsibilities, what to emphasize, and likely interview questions.
+- Avoid changing business code.
+
 ## Phase 12 Success Criteria
 - Work happens on `feature/phase12-real-llm-provider`.
 - Keep `RuleBasedAssistant` as the default offline provider.
@@ -392,6 +398,13 @@ Demo Readiness in progress on `release/v0.9.0`
 - [x] Inspect package contents
 - [x] Run diff and secret checks
 - [x] Commit release hardening
+- **Status:** complete
+
+### Phase 42: Interview Architecture Briefing
+- [x] Review current README, HANDOFF, and project overview
+- [x] Inspect source tree and key module boundaries
+- [x] Review professor/project context from the provided homepage
+- [x] Summarize architecture and interview talking points
 - **Status:** complete
 
 ## Key Questions

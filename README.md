@@ -1,7 +1,7 @@
 # GeoTaskShield
 
 面向移动群智感知的隐私保护任务分配仿真与可视化系统
-当前版本：`v0.10.0`
+当前版本：`v0.10.1`
 
 ## 摘要
 
@@ -161,9 +161,9 @@ flowchart LR
 
 ## 当前发布版本
 
-当前 release：`v0.10.0`
+当前 release：`v0.10.1`
 
-`v0.10.0` 固化了 Phase 13 的真实 LLM provider 产品化体验：
+`v0.10.1` 是 Phase 14 稳定化补丁版本，在不改变运行时语义的前提下固化 provider 泛化、测试拆分、验证脚本和发布文档卫生。`v0.10.0` 已固化 Phase 13 的真实 LLM provider 产品化体验：
 
 - `Batch Results` 当前筛选 CSV 导出。
 - Markdown 报告预览。
@@ -171,12 +171,12 @@ flowchart LR
 - `Agent Assistant` 本地规则分析、Markdown 预览和导出。
 - 可选 OpenAI-compatible provider，默认不作为主演示依赖，并支持超时配置、失败回退和 GUI 非阻塞分析。
 - Qt-free 批量结果 CSV/Markdown 字符串生成。
-- v0.10.0 GUI 演示指南。
+- v0.10.x GUI 演示指南。
 
 发布包默认输出：
 
 ```text
-out/package/GeoTaskShield-v0.10.0-windows-x64.zip
+out/package/GeoTaskShield-v0.10.1-windows-x64.zip
 ```
 
 ## 构建环境
@@ -201,6 +201,12 @@ D:/Qt/6.11.0/msvc2022_64
 
 从项目根目录执行。推荐使用 Visual Studio Developer Command Prompt，或在 PowerShell 中调用 `VsDevCmd.bat`。
 
+Phase 14 后可用本地验收脚本一次运行非 Qt 与 Qt Debug 检查：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify_phase14.ps1
+```
+
 ### 非 Qt Debug 构建与核心测试
 
 ```powershell
@@ -212,6 +218,40 @@ cmd /c 'call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Too
 ```powershell
 out\build\x64-debug\GeoTaskShield\GeoTaskShield.exe
 ```
+
+### Experiment plan runs
+
+`GeoTaskShieldBatchDemo` still supports the legacy no-argument batch run and writes:
+
+```text
+phase5_batch_results.csv
+phase5_batch_report.md
+```
+
+It can also run a reproducible experiment plan from a small hand-written JSON file:
+
+```powershell
+out\build\x64-debug\GeoTaskShield\GeoTaskShieldBatchDemo.exe --plan docs\examples\experiment_plan_basic.json
+```
+
+By default, plan-driven runs are archived under `runs/<run_label-or-plan-name>/`. A custom archive directory can be selected with `--output`:
+
+```powershell
+out\build\x64-debug\GeoTaskShield\GeoTaskShieldBatchDemo.exe --plan docs\examples\experiment_plan_basic.json --output runs\my-run
+```
+
+If the same `run_label` or `--output` directory is reused, the runner overwrites the same output filenames in that directory. Use a different `run_label` or `--output` path when you need to keep multiple archives side by side.
+
+Each run directory contains:
+
+```text
+results.csv
+report.md
+plan_snapshot.json
+metadata.json
+```
+
+Plan files support list values such as `[50, 100]` and numeric range objects such as `{"start": 50, "end": 100, "step": 50}` for numeric fields. The supported strategy values are `grid`, `k-anonymity`, `laplace`, `nearest`, `score`, and `hungarian`. With the same plan and seeds, core result columns are deterministic; `algorithm_runtime_ms` and metadata timestamps can vary between runs.
 
 ### Qt Debug 构建与 GUI smoke test
 
@@ -238,8 +278,10 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package_windows.ps1
 打包输出：
 
 ```text
-out/package/GeoTaskShield-v0.10.0-windows-x64.zip
+out/package/GeoTaskShield-v0.10.1-windows-x64.zip
 ```
+
+发布包包含用户文档、demo CSV/Markdown 和 `docs/demo/`，不包含 `docs/superpowers/history/` 中的历史规划记录。
 
 ## GUI 演示流程
 
@@ -327,10 +369,11 @@ $env:GTS_LLM_TIMEOUT_MS = "15000"
 | Phase 13 | Agent provider hardening: timeout configuration, fallback handling, and non-blocking GUI provider analysis |
 | Demo Readiness | `v0.9.0` Release hardening, demo guide, package verification |
 | v0.10.0 Release | Phase 13 provider hardening release package and demo guide |
+| v0.10.1 Release | Phase 14 stabilization, focused core tests, release hygiene, and provider-generalization documentation |
 
 ## 当前限制
 
-- 核心测试使用轻量自定义断言，尚未迁移到 GoogleTest 或 Catch2。
+- 核心测试使用轻量自定义断言，并已拆分为 model、algorithm、experiment 和 agent 四个 CTest 目标；尚未迁移到 GoogleTest 或 Catch2。
 - Hungarian 算法当前支持一任务对应一个展开 worker slot，不是严格多 worker 协同任务优化模型。
 - Laplace 隐私是仿真层面的坐标扰动，不是完整差分隐私证明实现。
 - Agent 和 Agent Assistant 默认使用本地规则型实现；OpenAI-compatible provider 为可选入口，只从环境变量读取 API key 和运行时配置，不保存密钥。
@@ -341,7 +384,7 @@ $env:GTS_LLM_TIMEOUT_MS = "15000"
 面向下一阶段智能化扩展，可以优先考虑：
 
 - 支持多轮实验助手上下文和更细粒度的参数建议。
-- 拆分当前核心测试文件，或评估引入 GoogleTest/Catch2。
+- 评估是否从当前轻量自定义断言迁移到 GoogleTest/Catch2。
 - 支持更多隐私保护机制和任务分配算法。
 - 引入持续集成流程和更系统的发布检查。
 
@@ -352,6 +395,7 @@ $env:GTS_LLM_TIMEOUT_MS = "15000"
 - `docs/demo/`：GUI 演示指南。
 - `phase5_batch_results.csv`：批量实验示例结果。
 - `phase5_batch_report.md`：批量实验示例 Markdown 报告。
+- `docs/superpowers/history/`：历史 Agent 规划记录，不属于发布包用户文档。
 
 ## 说明
 

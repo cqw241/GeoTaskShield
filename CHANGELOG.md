@@ -2,12 +2,40 @@
 
 ## Unreleased
 
+### Added
+
+- Added Qt-free experiment plan loading and expansion for reproducible batch experiment runs.
+- Added reproducible run archive output with `results.csv`, `report.md`, `plan_snapshot.json`, and `metadata.json`.
+- Added sample plan file: `docs/examples/experiment_plan_basic.json`.
+- Added `GeoTaskShieldBatchDemo --plan <path>` with optional `--output <directory>` for plan-driven batch runs.
+
+### Changed
+
+- Experiment plan loading now validates numeric parameters before running scenarios, including workers, tasks, seeds, grid size, k, epsilon, and optional area dimensions.
+
+## v0.10.1 - 2026-05-03
+
+### Added
+
+- Phase 14 stabilization and release hygiene for the `v0.10.x` line.
+- Split non-Qt core tests into focused model, algorithm, experiment, and agent CTest targets.
+- Added `scripts/verify_phase14.ps1` for local non-Qt and Qt Debug verification.
+- Added Windows GitHub Actions coverage for non-Qt core CMake/CTest.
+- Archived historical root planning records under `docs/superpowers/history/`.
+
 ### Changed
 
 - Generalized the GUI LLM provider from DashScope-specific naming to `OpenAI Compatible`.
 - Added `GTS_LLM_API_KEY`, `GTS_LLM_MODEL`, `GTS_LLM_BASE_URL`, and `GTS_LLM_TIMEOUT_MS` as primary provider environment variables.
 - Kept `DASHSCOPE_*` environment variables as compatibility fallback values.
 - Updated the default provider model to `deepseek-v4-flash` while keeping the DashScope OpenAI-compatible endpoint as the default base URL.
+- Updated release documentation and packaging defaults to `v0.10.1`.
+
+### Verification
+
+- Non-Qt Debug CTest now runs 4 focused core test targets.
+- Qt Debug CTest now runs the 4 focused core test targets plus the GUI smoke test.
+- Release package verification checks that historical planning records are not shipped.
 
 ## v0.10.0 - 2026-04-28
 

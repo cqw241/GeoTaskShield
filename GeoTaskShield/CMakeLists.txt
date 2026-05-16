@@ -24,6 +24,7 @@ set(GEOTASKSHIELD_CORE_SOURCES
     "agent/WinHttpClient.cpp"
     "experiment/BatchExperiment.cpp"
     "experiment/BatchExperimentExporter.cpp"
+    "experiment/ExperimentPlan.cpp"
     "experiment/BatchResultCsvLoader.cpp"
     "experiment/BatchResultModel.cpp"
 )
@@ -68,14 +69,23 @@ geotaskshield_apply_common_options(GeoTaskShieldAgentDemo)
 add_executable(GeoTaskShieldBatchDemo "app/batch_demo/main.cpp")
 target_link_libraries(GeoTaskShieldBatchDemo PRIVATE GeoTaskShieldCore)
 target_compile_features(GeoTaskShieldBatchDemo PRIVATE cxx_std_20)
+target_compile_definitions(GeoTaskShieldBatchDemo PRIVATE
+    GEOTASKSHIELD_PROJECT_VERSION="${PROJECT_VERSION}")
 geotaskshield_apply_common_options(GeoTaskShieldBatchDemo)
 
 if (BUILD_TESTING)
-    add_executable(GeoTaskShieldTests "tests/test_core.cpp")
-    target_link_libraries(GeoTaskShieldTests PRIVATE GeoTaskShieldCore)
-    target_compile_features(GeoTaskShieldTests PRIVATE cxx_std_20)
-    geotaskshield_apply_common_options(GeoTaskShieldTests)
-    add_test(NAME GeoTaskShieldCoreTests COMMAND GeoTaskShieldTests)
+    function(geotaskshield_add_core_test target_name source_file)
+        add_executable(${target_name} ${source_file})
+        target_link_libraries(${target_name} PRIVATE GeoTaskShieldCore)
+        target_compile_features(${target_name} PRIVATE cxx_std_20)
+        geotaskshield_apply_common_options(${target_name})
+        add_test(NAME ${target_name} COMMAND ${target_name})
+    endfunction()
+
+    geotaskshield_add_core_test(GeoTaskShieldCoreModelTests "tests/test_model.cpp")
+    geotaskshield_add_core_test(GeoTaskShieldCoreAlgorithmTests "tests/test_algorithms.cpp")
+    geotaskshield_add_core_test(GeoTaskShieldCoreExperimentTests "tests/test_experiment.cpp")
+    geotaskshield_add_core_test(GeoTaskShieldCoreAgentTests "tests/test_agent.cpp")
 endif()
 
 option(GEOTASKSHIELD_BUILD_GUI "Build the Qt Widgets GUI" OFF)
@@ -148,4 +158,7 @@ install(FILES
     DESTINATION share/GeoTaskShield)
 
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/docs/demo"
+    DESTINATION share/GeoTaskShield/docs)
+
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/docs/examples"
     DESTINATION share/GeoTaskShield/docs)

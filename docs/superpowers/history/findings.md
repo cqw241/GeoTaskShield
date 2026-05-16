@@ -148,6 +148,30 @@
 ## Visual/Browser Findings
 - No browser or image inspection used.
 
+## Interview Architecture Briefing Findings
+- User goal: prepare for an interview for Professor Tao Peng's project group, with emphasis on undergraduate C++ development, GUI/system implementation in phase one, and LLM/Agent development in phase two.
+- Current repository state: project has an existing `v0.9.0`-level history covering C++ core simulation, Qt GUI, batch experiments, Markdown/CSV reporting, offline Agent Assistant, and optional DashScope/OpenAI-compatible provider.
+- Existing planning files already contain a detailed phase history from core MVP through demo readiness; current task is explanation/preparation, not business-code modification.
+- `git status` shows this briefing updated `task_plan.md` and `progress.md`; there are also pre-existing untracked `deliverables/` and a Chinese PDF resume file.
+- Reading README/HANDOFF from the current PowerShell session produced mojibake for Chinese text, but module names, commands, paths, and phase structure were still recoverable from the files and existing planning records.
+- `rg --files` failed with `Access is denied`; use PowerShell `Get-ChildItem` as the fallback for source-tree inspection.
+- README confirms the project positioning: a C++20/CMake/Qt Widgets simulator for privacy-preserving task allocation in mobile crowdsensing.
+- Phase-one capabilities map directly to the recruiting note: C++ core implementation, algorithm modules, Qt Widgets GUI, CMake/CTest, Windows packaging, CSV/Markdown outputs.
+- Phase-two capabilities are already scaffolded: `agent` includes local rule-based parsing/reporting, GUI `Agent Assistant`, and an optional DashScope/OpenAI-compatible provider behind `IExperimentAssistant`.
+- Source layout confirms clean module boundaries: pure C++ core modules (`model`, `simulation`, `privacy`, `assignment`, `evaluation`, `data`, `experiment`, `agent`) and Qt-only UI code under `gui`.
+- `SimulationEngine` is the main orchestrator: generate workers/tasks, apply privacy mechanism, run assignment algorithm, then calculate evaluation metrics.
+- Privacy and assignment extension points are interface-based: `IPrivacyMechanism` / `PrivacyFactory` and `IAssignmentAlgorithm` / `AssignmentAlgorithmFactory`.
+- Current privacy mechanisms: Grid, K-Anonymity, Laplace Noise. Current assignment algorithms: Nearest Greedy, Score Greedy, Hungarian.
+- Metrics include completion rate, moving distance, reward, privacy loss, runtime, load balance, Jain fairness, privacy-utility ratio, and timeout rate.
+- Privacy implementations preserve the core experiment idea: `GridPrivacy` maps real coordinates to grid-cell centers, `KAnonymityPrivacy` exposes local centroids, and `LaplaceNoisePrivacy` adds deterministic seeded Laplace coordinate noise for reproducible experiments.
+- Assignment implementations cover increasing complexity: nearest-distance greedy, weighted score greedy, and Hungarian minimum-cost matching over expanded worker slots.
+- `MetricsCalculator` evaluates completed assignments against real worker positions, so privacy perturbs decision input while metrics still capture actual movement cost and timeout.
+- `BatchExperimentRunner` and exporters turn single simulations into scenario matrices and CSV/Markdown outputs.
+- `BatchResultModel` supports filtered records, sorted records, best-metric summaries, chart bars, Markdown reports, and CSV reports for the GUI Batch Results tab.
+- `RuleBasedAssistant` analyzes user prompts and current batch rows locally; `OpenAICompatibleAssistant` wraps that local result and optionally sends prompt + batch rows to an OpenAI-compatible provider when environment variables are configured.
+- `MainWindow` wires three tabs: `Simulation`, `Batch Results`, and `Agent Assistant`; the assistant receives current filtered batch rows through a provider callback rather than scraping UI table text.
+- Professor context from public pages: ?? is listed as a Guangzhou University Computer Science and Cyber Engineering associate professor; public profile research interests include mobile crowdsensing networks, social-network privacy protection, cloud computing security, and blockchain technology. This aligns strongly with GeoTaskShield's mobile crowdsensing/privacy-preserving task-allocation theme.
+
 ---
 *Update this file after every 2 view/browser/search operations*
 *This prevents visual information from being lost*
