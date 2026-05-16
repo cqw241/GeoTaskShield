@@ -1,6 +1,8 @@
 #include "assignment/ScoreGreedyAlgorithm.h"
 
+#include <algorithm>
 #include <chrono>
+#include <numeric>
 #include <limits>
 #include <vector>
 
@@ -20,8 +22,21 @@ AssignmentResult ScoreGreedyAlgorithm::assign(const std::vector<Task>& tasks,
     AssignmentResult result;
     result.assignments.reserve(tasks.size());
     std::vector<int> assignedCounts(workers.size(), 0);
+    int totalCapacity = 0;
+    for (const Worker& worker : workers) {
+        totalCapacity += std::max(0, worker.maxTasks);
+    }
 
-    for (const Task& task : tasks) {
+    std::vector<std::size_t> taskOrder(tasks.size());
+    std::iota(taskOrder.begin(), taskOrder.end(), 0);
+    if (totalCapacity < static_cast<int>(tasks.size())) {
+        std::stable_sort(taskOrder.begin(), taskOrder.end(), [&tasks](std::size_t lhs, std::size_t rhs) {
+            return tasks[lhs].reward > tasks[rhs].reward;
+        });
+    }
+
+    for (const std::size_t taskIndex : taskOrder) {
+        const Task& task = tasks[taskIndex];
         int bestWorkerIndex = -1;
         double bestScore = -std::numeric_limits<double>::infinity();
         double bestDistance = 0.0;

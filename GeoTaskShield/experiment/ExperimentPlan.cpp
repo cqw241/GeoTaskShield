@@ -324,6 +324,7 @@ std::string serializePlan(const ExperimentPlan& plan)
            << "  \"seeds\": " << numberArrayJson(plan.seeds) << ",\n"
            << "  \"privacy\": " << stringArrayJson(plan.privacyMechanisms) << ",\n"
            << "  \"algorithms\": " << stringArrayJson(plan.assignmentAlgorithms) << ",\n"
+           << "  \"data_profile\": " << stringArrayJson(plan.dataProfiles) << ",\n"
            << "  \"grid_size\": " << doubleArrayJson(plan.gridSizes) << ",\n"
            << "  \"k\": " << numberArrayJson(plan.kValues) << ",\n"
            << "  \"epsilon\": " << doubleArrayJson(plan.epsilons);
@@ -493,6 +494,25 @@ void validateStrategies(const ExperimentPlan& plan)
     }
 }
 
+bool isKnownDataProfile(const std::string& value)
+{
+    return value == "default" ||
+           value == "worker-shortage" ||
+           value == "deadline-tight" ||
+           value == "high-privacy-noise" ||
+           value == "reward-skew" ||
+           value == "heterogeneous-speed";
+}
+
+void validateDataProfiles(const ExperimentPlan& plan)
+{
+    for (const std::string& profile : plan.dataProfiles) {
+        if (!isKnownDataProfile(profile)) {
+            throw std::runtime_error("Unknown data profile: " + profile);
+        }
+    }
+}
+
 void validatePositiveInts(const std::vector<int>& values, const std::string& fieldName)
 {
     for (const int value : values) {
@@ -518,6 +538,7 @@ void validatePlanParameters(const ExperimentPlan& plan)
     validatePositiveInts(plan.kValues, "k");
     validatePositiveDoubles(plan.gridSizes, "grid_size");
     validatePositiveDoubles(plan.epsilons, "epsilon");
+    validateDataProfiles(plan);
 
     if (plan.hasAreaWidth && plan.areaWidth <= 0.0) {
         throw std::runtime_error(invalidValueMessage("areaWidth", compactDouble(plan.areaWidth)));
@@ -555,6 +576,7 @@ std::string metadataJson(const ExperimentPlan& plan,
            << "  \"seeds\": " << numberArrayJson(plan.seeds) << ",\n"
            << "  \"privacy\": " << stringArrayJson(plan.privacyMechanisms) << ",\n"
            << "  \"algorithms\": " << stringArrayJson(plan.assignmentAlgorithms) << ",\n"
+           << "  \"data_profile\": " << stringArrayJson(plan.dataProfiles) << ",\n"
            << "  \"project_version\": \"" << escapeJson(projectVersion) << "\"\n"
            << "}\n";
     return output.str();
@@ -577,43 +599,50 @@ std::vector<ExperimentScenario> ExperimentPlan::expandToScenarios() const
     std::vector<ExperimentScenario> scenarios;
     scenarios.reserve(workers.size() * tasks.size() * seeds.size() *
                       privacyMechanisms.size() * assignmentAlgorithms.size() *
-                      gridSizes.size() * kValues.size() * epsilons.size());
+                      dataProfiles.size() * gridSizes.size() * kValues.size() *
+                      epsilons.size());
 
     for (const int workerCount : workers) {
         for (const int taskCount : tasks) {
             for (const unsigned int seed : seeds) {
-                for (const std::string& privacy : privacyMechanisms) {
-                    for (const std::string& algorithm : assignmentAlgorithms) {
-                        for (const double gridSize : gridSizes) {
-                            for (const int k : kValues) {
-                                for (const double epsilon : epsilons) {
-                                    ExperimentScenario scenario;
-                                    std::ostringstream nameStream;
-                                    nameStream << name
-                                               << "-w" << workerCount
-                                               << "-t" << taskCount
-                                               << "-seed" << seed
-                                               << '-' << privacy
-                                               << '-' << algorithm
-                                               << "-grid" << compactDouble(gridSize)
-                                               << "-k" << k
-                                               << "-eps" << compactDouble(epsilon);
-                                    scenario.name = nameStream.str();
-                                    scenario.config.workerCount = workerCount;
-                                    scenario.config.taskCount = taskCount;
-                                    scenario.config.randomSeed = seed;
-                                    scenario.config.privacy.gridSize = gridSize;
-                                    scenario.config.privacy.k = k;
-                                    scenario.config.privacy.epsilon = epsilon;
-                                    if (hasAreaWidth) {
-                                        scenario.config.areaWidth = areaWidth;
+                for (const std::string& profile : dataProfiles) {
+                    for (const std::string& privacy : privacyMechanisms) {
+                        for (const std::string& algorithm : assignmentAlgorithms) {
+                            for (const double gridSize : gridSizes) {
+                                for (const int k : kValues) {
+                                    for (const double epsilon : epsilons) {
+                                        ExperimentScenario scenario;
+                                        std::ostringstream nameStream;
+                                        nameStream << name
+                                                   << "-w" << workerCount
+                                                   << "-t" << taskCount
+                                                   << "-seed" << seed;
+                                        if (profile != "default") {
+                                            nameStream << "-profile-" << profile;
+                                        }
+                                        nameStream << '-' << privacy
+                                                   << '-' << algorithm
+                                                   << "-grid" << compactDouble(gridSize)
+                                                   << "-k" << k
+                                                   << "-eps" << compactDouble(epsilon);
+                                        scenario.name = nameStream.str();
+                                        scenario.config.workerCount = workerCount;
+                                        scenario.config.taskCount = taskCount;
+                                        scenario.config.randomSeed = seed;
+                                        scenario.config.dataProfile = profile;
+                                        scenario.config.privacy.gridSize = gridSize;
+                                        scenario.config.privacy.k = k;
+                                        scenario.config.privacy.epsilon = epsilon;
+                                        if (hasAreaWidth) {
+                                            scenario.config.areaWidth = areaWidth;
+                                        }
+                                        if (hasAreaHeight) {
+                                            scenario.config.areaHeight = areaHeight;
+                                        }
+                                        scenario.privacyType = privacy;
+                                        scenario.algorithmType = algorithm;
+                                        scenarios.push_back(scenario);
                                     }
-                                    if (hasAreaHeight) {
-                                        scenario.config.areaHeight = areaHeight;
-                                    }
-                                    scenario.privacyType = privacy;
-                                    scenario.algorithmType = algorithm;
-                                    scenarios.push_back(scenario);
                                 }
                             }
                         }
@@ -669,6 +698,11 @@ ExperimentPlanLoadResult ExperimentPlanLoader::loadFromString(const std::string&
         plan.assignmentAlgorithms = readStringList(
             firstRequiredField(root, {"algorithms", "assignment_algorithms"}),
             "algorithms");
+        if (const JsonValue* dataProfileField = findField(root, "data_profile")) {
+            plan.dataProfiles = readStringList(*dataProfileField, "data_profile");
+        } else if (const JsonValue* dataProfilesField = findField(root, "data_profiles")) {
+            plan.dataProfiles = readStringList(*dataProfilesField, "data_profiles");
+        }
         plan.gridSizes = readNumberList(
             firstRequiredField(root, {"grid_size", "grid_sizes"}),
             "grid_size");

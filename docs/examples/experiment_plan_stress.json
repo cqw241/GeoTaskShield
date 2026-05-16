@@ -1,0 +1,21 @@
+{
+  "name": "stress scenario suite",
+  "run_label": "stress-suite",
+  "workers": [8],
+  "tasks": [12],
+  "seeds": [91],
+  "data_profile": [
+    "worker-shortage",
+    "deadline-tight",
+    "high-privacy-noise",
+    "reward-skew",
+    "heterogeneous-speed"
+  ],
+  "privacy": ["grid", "k-anonymity", "laplace"],
+  "algorithms": ["nearest", "score", "hungarian"],
+  "grid_size": [8.0, 25.0],
+  "k": [5],
+  "epsilon": [0.25, 1.0],
+  "areaWidth": 120.0,
+  "areaHeight": 120.0
+}

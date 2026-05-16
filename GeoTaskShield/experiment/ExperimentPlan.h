@@ -15,6 +15,7 @@ struct ExperimentPlan {
     std::vector<unsigned int> seeds;
     std::vector<std::string> privacyMechanisms;
     std::vector<std::string> assignmentAlgorithms;
+    std::vector<std::string> dataProfiles{"default"};
     std::vector<double> gridSizes;
     std::vector<int> kValues;
     std::vector<double> epsilons;

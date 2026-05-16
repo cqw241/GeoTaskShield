@@ -105,6 +105,24 @@ int main()
     require(scoreResult.assignments[0].workerId == 2,
             "ScoreGreedyAlgorithm should choose the highest scoring worker.");
 
+    std::vector<Worker> capacityWorkers{
+        Worker{11, Location{0.0, 0.0}, Location{0.0, 0.0}, 1, 1.0, 0.0, 1.0}
+    };
+    std::vector<Task> rewardPriorityTasks{
+        Task{21, Location{0.0, 0.0}, 5.0, 100.0, 1, 1, TaskType::Traffic},
+        Task{22, Location{0.0, 0.0}, 500.0, 100.0, 1, 1, TaskType::Noise}
+    };
+    scoreContext.alpha = 1.0;
+    scoreContext.beta = 1.0;
+    scoreContext.gamma = 0.0;
+    scoreContext.delta = 0.0;
+    const AssignmentResult scoreCapacityResult =
+        scoreAlgorithm.assign(rewardPriorityTasks, capacityWorkers, scoreContext);
+    require(scoreCapacityResult.assignments.size() == 1,
+            "ScoreGreedyAlgorithm should respect worker capacity.");
+    require(scoreCapacityResult.assignments[0].taskId == 22,
+            "ScoreGreedyAlgorithm should prioritize higher reward tasks when capacity is tight.");
+
     std::vector<Task> matchingTasks{
         Task{30, Location{0.0, 0.0}, 10.0, 100.0, 1, 1, TaskType::Traffic},
         Task{31, Location{10.0, 0.0}, 10.0, 100.0, 1, 1, TaskType::Noise}

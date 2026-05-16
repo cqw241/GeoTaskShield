@@ -8,8 +8,25 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <limits>
 #include <string>
 #include <vector>
+
+namespace {
+
+std::filesystem::path findProjectRoot()
+{
+    std::filesystem::path current = std::filesystem::current_path();
+    while (!current.empty()) {
+        if (std::filesystem::exists(current / "docs" / "examples" / "experiment_plan_basic.json")) {
+            return current;
+        }
+        current = current.parent_path();
+    }
+    return {};
+}
+
+} // namespace
 
 int main()
 {
@@ -212,6 +229,158 @@ int main()
                 expandedAgain.front().name == expanded.front().name &&
                 expandedAgain.back().name == expanded.back().name,
             "ExperimentPlan expansion should be stable across repeated calls.");
+
+    const std::filesystem::path projectRoot = findProjectRoot();
+    require(!projectRoot.empty(),
+            "Experiment tests should locate the project root from the build directory.");
+    const ExperimentPlanLoadResult stressPlanLoad =
+        ExperimentPlanLoader::loadFromFile(
+            (projectRoot / "docs" / "examples" / "experiment_plan_stress.json").string());
+    require(stressPlanLoad.success, stressPlanLoad.errorMessage);
+    require(stressPlanLoad.plan.dataProfiles.size() == 5,
+            "Stress plan should parse all configured data profiles.");
+    const std::vector<ExperimentScenario> stressScenarios =
+        stressPlanLoad.plan.expandToScenarios();
+    require(stressScenarios.size() == 180,
+            "Stress plan should expand profiles, privacy mechanisms, algorithms, grid sizes, and epsilons.");
+    require(stressScenarios.front().config.dataProfile == "worker-shortage",
+            "Stress scenario expansion should apply the first data profile.");
+    require(contains(stressScenarios.front().name, "profile-worker-shortage"),
+            "Stress scenario names should include the data profile.");
+
+    const BatchExperimentResult stressResult = batchRunner.run(stressScenarios);
+    int nonFullCompletionRows = 0;
+    int fullCompletionRows = 0;
+    int timeoutRows = 0;
+    double minFairness = std::numeric_limits<double>::max();
+    double maxFairness = std::numeric_limits<double>::lowest();
+    double minRewardSkewReward = std::numeric_limits<double>::max();
+    double maxRewardSkewReward = std::numeric_limits<double>::lowest();
+    double workerShortageCompletionSum = 0.0;
+    int workerShortageRows = 0;
+    double rewardSkewCompletionSum = 0.0;
+    int rewardSkewRows = 0;
+    double rewardSkewNearestRewardSum = 0.0;
+    int rewardSkewNearestRows = 0;
+    double rewardSkewScoreRewardSum = 0.0;
+    int rewardSkewScoreRows = 0;
+    double rewardSkewHungarianRewardSum = 0.0;
+    int rewardSkewHungarianRows = 0;
+    double minHighPrivacyLoss = std::numeric_limits<double>::max();
+    double maxHighPrivacyLoss = std::numeric_limits<double>::lowest();
+    double minHighPrivacyDistance = std::numeric_limits<double>::max();
+    double maxHighPrivacyDistance = std::numeric_limits<double>::lowest();
+    double minHighPrivacyUtility = std::numeric_limits<double>::max();
+    double maxHighPrivacyUtility = std::numeric_limits<double>::lowest();
+    int highPrivacyRows = 0;
+    int deadlineTimeoutFullCompletionRows = 0;
+    double maxDeadlineOrSpeedTimeout = 0.0;
+    for (const BatchExperimentRow& row : stressResult.rows) {
+        if (row.metrics.completionRate < 1.0) {
+            ++nonFullCompletionRows;
+        } else if (near(row.metrics.completionRate, 1.0)) {
+            ++fullCompletionRows;
+        }
+        if (row.metrics.timeoutRate > 0.0) {
+            ++timeoutRows;
+        }
+        minFairness = std::min(minFairness, row.metrics.fairnessIndex);
+        maxFairness = std::max(maxFairness, row.metrics.fairnessIndex);
+        if (row.config.dataProfile == "worker-shortage") {
+            workerShortageCompletionSum += row.metrics.completionRate;
+            ++workerShortageRows;
+        }
+        if (row.config.dataProfile == "reward-skew") {
+            rewardSkewCompletionSum += row.metrics.completionRate;
+            ++rewardSkewRows;
+            minRewardSkewReward = std::min(minRewardSkewReward, row.metrics.totalReward);
+            maxRewardSkewReward = std::max(maxRewardSkewReward, row.metrics.totalReward);
+            if (row.algorithmName == "Nearest Greedy") {
+                rewardSkewNearestRewardSum += row.metrics.totalReward;
+                ++rewardSkewNearestRows;
+            } else if (row.algorithmName == "Score Greedy") {
+                rewardSkewScoreRewardSum += row.metrics.totalReward;
+                ++rewardSkewScoreRows;
+            } else if (row.algorithmName == "Hungarian") {
+                rewardSkewHungarianRewardSum += row.metrics.totalReward;
+                ++rewardSkewHungarianRows;
+            }
+        }
+        if (row.config.dataProfile == "high-privacy-noise") {
+            minHighPrivacyLoss = std::min(minHighPrivacyLoss, row.metrics.averagePrivacyLoss);
+            maxHighPrivacyLoss = std::max(maxHighPrivacyLoss, row.metrics.averagePrivacyLoss);
+            minHighPrivacyDistance =
+                std::min(minHighPrivacyDistance, row.metrics.averageMovingDistance);
+            maxHighPrivacyDistance =
+                std::max(maxHighPrivacyDistance, row.metrics.averageMovingDistance);
+            minHighPrivacyUtility =
+                std::min(minHighPrivacyUtility, row.metrics.privacyUtilityRatio);
+            maxHighPrivacyUtility =
+                std::max(maxHighPrivacyUtility, row.metrics.privacyUtilityRatio);
+            ++highPrivacyRows;
+        }
+        if (row.config.dataProfile == "deadline-tight" ||
+            row.config.dataProfile == "heterogeneous-speed") {
+            maxDeadlineOrSpeedTimeout =
+                std::max(maxDeadlineOrSpeedTimeout, row.metrics.timeoutRate);
+        }
+        if (row.config.dataProfile == "deadline-tight" &&
+            near(row.metrics.completionRate, 1.0) &&
+            row.metrics.timeoutRate > 0.0) {
+            ++deadlineTimeoutFullCompletionRows;
+        }
+    }
+    require(nonFullCompletionRows >= 3,
+            "Stress scenario suite should produce at least three non-full completion rows.");
+    require(fullCompletionRows > 0,
+            "Stress scenario suite should include full-completion rows so capacity pressure does not dominate every profile.");
+    require(timeoutRows >= 1,
+            "Stress scenario suite should produce at least one timeout row.");
+    require(maxDeadlineOrSpeedTimeout > 0.0,
+            "Deadline-tight or heterogeneous-speed stress profiles should produce timeout pressure.");
+    require(deadlineTimeoutFullCompletionRows > 0,
+            "Deadline-tight stress profile should show timeout pressure without completion pressure.");
+    require(maxFairness - minFairness > 0.05,
+            "Stress scenario suite should produce visible fairness variation.");
+    require(workerShortageRows > 0 && rewardSkewRows > 0,
+            "Stress scenario suite should include worker-shortage and reward-skew rows.");
+    require((rewardSkewCompletionSum / static_cast<double>(rewardSkewRows)) >= 0.80,
+            "Reward-skew stress profile should not be dominated by worker capacity shortage.");
+    require((rewardSkewCompletionSum / static_cast<double>(rewardSkewRows)) >
+                (workerShortageCompletionSum / static_cast<double>(workerShortageRows)),
+            "Reward-skew stress profile should be less capacity constrained than worker-shortage.");
+    require(maxRewardSkewReward - minRewardSkewReward > 100.0,
+            "Reward-skew stress profile should produce visible totalReward differences across algorithms.");
+    require(rewardSkewNearestRows > 0 && rewardSkewScoreRows > 0 &&
+                rewardSkewHungarianRows > 0,
+            "Reward-skew stress profile should include all configured algorithms.");
+    require((rewardSkewScoreRewardSum / static_cast<double>(rewardSkewScoreRows)) >
+                (rewardSkewNearestRewardSum / static_cast<double>(rewardSkewNearestRows)) + 100.0,
+            "Reward-skew stress profile should show score beating nearest on totalReward.");
+    require(highPrivacyRows > 0,
+            "Stress scenario suite should include high-privacy-noise rows.");
+    require(maxHighPrivacyLoss - minHighPrivacyLoss > 1.0 &&
+                maxHighPrivacyDistance - minHighPrivacyDistance > 1.0 &&
+                maxHighPrivacyUtility - minHighPrivacyUtility > 0.1,
+            "High-privacy-noise stress profile should vary privacy loss, distance, and utility.");
+
+    const std::string stressMarkdown = BatchExperimentExporter::toMarkdown(stressResult);
+    require(contains(stressMarkdown, "## Stress Scenario Summary"),
+            "Stress report should include a stress scenario summary.");
+    require(contains(stressMarkdown, "Non-full completion rows"),
+            "Stress report should summarize non-full completion rows.");
+    require(contains(stressMarkdown, "Timeout pressure rows"),
+            "Stress report should summarize timeout pressure rows.");
+    require(contains(stressMarkdown, "Privacy-utility tradeoff"),
+            "Stress report should explain privacy utility tradeoffs.");
+    require(contains(stressMarkdown, "## Stress Profiles"),
+            "Stress report should include per-profile summaries.");
+    require(contains(stressMarkdown, "reward-skew"),
+            "Stress report should identify reward-skew profile results.");
+
+    SimulationConfig legacyDefaultConfig;
+    require(legacyDefaultConfig.dataProfile == "default",
+            "SimulationConfig should preserve the legacy default data profile.");
 
     const ExperimentPlanLoadResult missingFieldLoad =
         ExperimentPlanLoader::loadFromString(R"({
