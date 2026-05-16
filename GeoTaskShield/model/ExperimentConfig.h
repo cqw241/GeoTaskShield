@@ -3,6 +3,7 @@
 #include "model/Task.h"
 #include "model/Worker.h"
 
+#include <string>
 #include <vector>
 
 namespace gts {
@@ -26,6 +27,7 @@ struct SimulationConfig {
     unsigned int randomSeed{42};
     double areaWidth{100.0};
     double areaHeight{100.0};
+    std::string dataProfile{"default"};
     PrivacyContext privacy;
     AssignmentContext assignment;
 };

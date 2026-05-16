@@ -234,6 +234,14 @@ It can also run a reproducible experiment plan from a small hand-written JSON fi
 out\build\x64-debug\GeoTaskShield\GeoTaskShieldBatchDemo.exe --plan docs\examples\experiment_plan_basic.json
 ```
 
+The basic plan is intended to stay small and reproducible. For defense and research demos that need visible tradeoffs, run the Stress Scenario Suite:
+
+```powershell
+out\build\x64-debug\GeoTaskShield\GeoTaskShieldBatchDemo.exe --plan docs\examples\experiment_plan_stress.json --output runs\stress-suite
+```
+
+The stress plan combines worker shortage, tight-deadline, high-privacy-noise, reward-skew, and heterogeneous-speed data profiles across `nearest`, `score`, and `hungarian` assignment with `grid`, `k-anonymity`, and `laplace` privacy. Worker shortage provides explicit capacity pressure, while the other profiles keep enough assignment capacity to expose timeout, privacy-utility, reward, and fairness tradeoffs in `results.csv` and `report.md` without changing the legacy no-argument batch run.
+
 By default, plan-driven runs are archived under `runs/<run_label-or-plan-name>/`. A custom archive directory can be selected with `--output`:
 
 ```powershell
