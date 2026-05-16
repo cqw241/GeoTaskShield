@@ -9,6 +9,7 @@
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
+#include <sstream>
 #include <string>
 
 namespace {
@@ -128,6 +129,43 @@ int main(int argc, char** argv)
     require(exportedCsv.find("scenario,workers,tasks,grid_size,k,epsilon") !=
                 std::string::npos,
             "Exported filtered CSV should contain the batch CSV header.");
+
+    std::ostringstream largeCsv;
+    largeCsv << "scenario,workers,tasks,grid_size,k,epsilon,privacy,algorithm,"
+                "completed_tasks,total_tasks,completion_rate,average_moving_distance,"
+                "total_reward,average_privacy_loss,algorithm_runtime_ms,user_load_stddev,"
+                "fairness_index,privacy_utility_ratio,timeout_rate\n";
+    for (int i = 0; i < 60; ++i) {
+        const int gridSize = i % 2 == 0 ? 8 : 25;
+        const double epsilon = i % 3 == 0 ? 0.25 : 1.0;
+        largeCsv << "stress scenario suite-w8-t12-seed91-profile-worker-shortage-grid-score-grid"
+                 << gridSize << "-k5-eps" << epsilon
+                 << '-' << i
+                 << ",8,12," << gridSize << ",5," << epsilon
+                 << ",Grid Privacy,Score Greedy,"
+                 << "12,12," << (1.0 - static_cast<double>(i) * 0.001)
+                 << ",10,100,1,0.1,0,0.9,0.45,0\n";
+    }
+    const std::string largeCsvPath =
+        writeTempCsv("gts_stress_gui_large.csv", largeCsv.str());
+    require(batchWidget->loadCsvFile(QString::fromStdString(largeCsvPath)),
+            "BatchResultsWidget should load a large stress-style CSV.");
+    require(batchWidget->visibleRowCountForTesting() == 60,
+            "BatchResultsWidget table should keep all filtered stress rows visible.");
+    require(batchWidget->chartBarCountForTesting() == 24,
+            "BatchResultsWidget chart should default to a readable Top 24 view.");
+    require(batchWidget->chartXAxisLabelCountForTesting() <= 6,
+            "BatchResultsWidget chart should avoid drawing every long stress label.");
+    const QStringList chartLabels = batchWidget->chartLabelsForTesting();
+    require(!chartLabels.isEmpty(),
+            "BatchResultsWidget should expose chart labels for stress data.");
+    require(chartLabels.front().contains("short") &&
+                chartLabels.front().contains("grid") &&
+                chartLabels.front().contains("score") &&
+                chartLabels.front().contains(" e"),
+            "BatchResultsWidget should convert long stress scenarios into informative short chart labels.");
+    require(!chartLabels.front().startsWith("stress scenario"),
+            "BatchResultsWidget chart labels should not repeat the shared stress scenario prefix.");
 
     const std::filesystem::path demoCsvPath =
         repositoryRoot() / "phase5_batch_results.csv";

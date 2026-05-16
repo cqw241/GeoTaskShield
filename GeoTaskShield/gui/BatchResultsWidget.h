@@ -4,6 +4,7 @@
 #include "experiment/BatchResultRecord.h"
 
 #include <QString>
+#include <QStringList>
 #include <QWidget>
 
 #include <vector>
@@ -27,6 +28,8 @@ public:
     bool loadCsvFile(const QString& filePath);
     int visibleRowCountForTesting() const;
     int chartBarCountForTesting() const;
+    int chartXAxisLabelCountForTesting() const;
+    QStringList chartLabelsForTesting() const;
     QString firstScenarioForTesting() const;
     void sortByColumnForTesting(const QString& fieldName, Qt::SortOrder order);
     bool hasMarkdownActionsForTesting() const;
@@ -72,6 +75,7 @@ private:
     QComboBox* privacyCombo_{};
     QComboBox* algorithmCombo_{};
     QComboBox* metricCombo_{};
+    QComboBox* chartLimitCombo_{};
     QLabel* bestCompletionLabel_{};
     QLabel* bestUtilityLabel_{};
     QLabel* bestFairnessLabel_{};

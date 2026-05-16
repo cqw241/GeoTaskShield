@@ -21,6 +21,7 @@
 #include <QVariant>
 
 #include <algorithm>
+#include <cctype>
 #include <iomanip>
 #include <set>
 #include <sstream>
@@ -152,6 +153,102 @@ void addMetric(QComboBox* combo, BatchResultMetric metric)
     combo->addItem(metricLabel(metric), static_cast<int>(metric));
 }
 
+bool lowerMetricIsBetter(BatchResultMetric metric)
+{
+    return metric == BatchResultMetric::AverageTrueDistance ||
+           metric == BatchResultMetric::AveragePrivacyLoss ||
+           metric == BatchResultMetric::RuntimeMs ||
+           metric == BatchResultMetric::UserLoadStdDev ||
+           metric == BatchResultMetric::TimeoutRate;
+}
+
+std::string lowerCopy(std::string value)
+{
+    std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) {
+        return static_cast<char>(std::tolower(ch));
+    });
+    return value;
+}
+
+std::string privacyAbbreviation(const std::string& privacy)
+{
+    const std::string lower = lowerCopy(privacy);
+    if (lower.find("laplace") != std::string::npos) {
+        return "lap";
+    }
+    if (lower.find("anonymity") != std::string::npos) {
+        return "k-anon";
+    }
+    if (lower.find("grid") != std::string::npos) {
+        return "grid";
+    }
+    return privacy;
+}
+
+std::string algorithmAbbreviation(const std::string& algorithm)
+{
+    const std::string lower = lowerCopy(algorithm);
+    if (lower.find("nearest") != std::string::npos) {
+        return "near";
+    }
+    if (lower.find("score") != std::string::npos) {
+        return "score";
+    }
+    if (lower.find("hungarian") != std::string::npos) {
+        return "hung";
+    }
+    return algorithm;
+}
+
+std::string stressProfileLabel(const std::string& scenario)
+{
+    if (scenario.find("profile-worker-shortage") != std::string::npos) {
+        return "short";
+    }
+    if (scenario.find("profile-deadline-tight") != std::string::npos) {
+        return "dead";
+    }
+    if (scenario.find("profile-high-privacy-noise") != std::string::npos) {
+        return "priv";
+    }
+    if (scenario.find("profile-reward-skew") != std::string::npos) {
+        return "reward";
+    }
+    if (scenario.find("profile-heterogeneous-speed") != std::string::npos) {
+        return "hetero";
+    }
+    return {};
+}
+
+std::string formatCompactDouble(double value)
+{
+    std::ostringstream output;
+    output << std::setprecision(4) << value;
+    return output.str();
+}
+
+std::string chartLabel(const BatchResultRecord& record)
+{
+    const std::string profile = stressProfileLabel(record.scenario);
+    if (!profile.empty()) {
+        std::ostringstream label;
+        label << profile << ' ' << privacyAbbreviation(record.privacy)
+              << ' ' << algorithmAbbreviation(record.algorithm)
+              << "\ng" << formatCompactDouble(record.gridSize)
+              << " k" << record.k
+              << " e" << formatCompactDouble(record.epsilon);
+        return label.str();
+    }
+
+    if (record.scenario.size() <= 32) {
+        return record.scenario;
+    }
+
+    std::ostringstream label;
+    label << record.scenario.substr(0, 29) << "...";
+    return label.str();
+}
+
 QTableWidgetItem* textItem(const std::string& value)
 {
     return new QTableWidgetItem(QString::fromStdString(value));
@@ -192,6 +289,7 @@ BatchResultsWidget::BatchResultsWidget(QWidget* parent)
     privacyCombo_ = new QComboBox(this);
     algorithmCombo_ = new QComboBox(this);
     metricCombo_ = new QComboBox(this);
+    chartLimitCombo_ = new QComboBox(this);
     addMetric(metricCombo_, BatchResultMetric::CompletionRate);
     addMetric(metricCombo_, BatchResultMetric::AverageTrueDistance);
     addMetric(metricCombo_, BatchResultMetric::TotalReward);
@@ -201,10 +299,17 @@ BatchResultsWidget::BatchResultsWidget(QWidget* parent)
     addMetric(metricCombo_, BatchResultMetric::FairnessIndex);
     addMetric(metricCombo_, BatchResultMetric::PrivacyUtilityRatio);
     addMetric(metricCombo_, BatchResultMetric::TimeoutRate);
+    chartLimitCombo_->setObjectName("chartLimitCombo");
+    chartLimitCombo_->addItem("Top 12", 12);
+    chartLimitCombo_->addItem("Top 24", 24);
+    chartLimitCombo_->addItem("Top 40", 40);
+    chartLimitCombo_->addItem("All", -1);
+    chartLimitCombo_->setCurrentIndex(1);
 
     filterForm->addRow("Privacy", privacyCombo_);
     filterForm->addRow("Algorithm", algorithmCombo_);
     filterForm->addRow("Metric", metricCombo_);
+    filterForm->addRow("Chart rows", chartLimitCombo_);
 
     leftLayout->addWidget(openButton_);
     leftLayout->addWidget(fileLabel_);
@@ -300,6 +405,9 @@ BatchResultsWidget::BatchResultsWidget(QWidget* parent)
     connect(metricCombo_, &QComboBox::currentIndexChanged, this, [this]() {
         refreshView();
     });
+    connect(chartLimitCombo_, &QComboBox::currentIndexChanged, this, [this]() {
+        refreshView();
+    });
     connect(table_, &QTableWidget::currentCellChanged, this, [this](int currentRow) {
         updateDetailPanelForRow(currentRow);
     });
@@ -330,6 +438,20 @@ int BatchResultsWidget::visibleRowCountForTesting() const
 int BatchResultsWidget::chartBarCountForTesting() const
 {
     return static_cast<int>(currentBars_.size());
+}
+
+int BatchResultsWidget::chartXAxisLabelCountForTesting() const
+{
+    return chart_ ? static_cast<int>(chart_->xAxisLabelCountForTesting()) : 0;
+}
+
+QStringList BatchResultsWidget::chartLabelsForTesting() const
+{
+    QStringList labels;
+    for (const ChartBar& bar : currentBars_) {
+        labels.push_back(QString::fromStdString(bar.label));
+    }
+    return labels;
 }
 
 QString BatchResultsWidget::firstScenarioForTesting() const
@@ -489,6 +611,7 @@ void BatchResultsWidget::resetFilters()
     privacyCombo_->setCurrentIndex(0);
     algorithmCombo_->setCurrentIndex(0);
     metricCombo_->setCurrentIndex(0);
+    chartLimitCombo_->setCurrentIndex(1);
     refreshView();
 }
 
@@ -523,7 +646,28 @@ void BatchResultsWidget::refreshView()
     model_.setPrivacyFilter(privacyCombo_->currentData().toString().toStdString());
     model_.setAlgorithmFilter(algorithmCombo_->currentData().toString().toStdString());
     visibleRecords_ = model_.filteredRecords();
-    currentBars_ = model_.chartBars(selectedMetric());
+    const BatchResultMetric metric = selectedMetric();
+    std::vector<BatchResultRecord> chartRecords = visibleRecords_;
+    std::stable_sort(chartRecords.begin(), chartRecords.end(),
+                     [metric](const BatchResultRecord& lhs,
+                              const BatchResultRecord& rhs) {
+                         if (lowerMetricIsBetter(metric)) {
+                             return metricValue(lhs, metric) < metricValue(rhs, metric);
+                         }
+                         return metricValue(rhs, metric) < metricValue(lhs, metric);
+                     });
+
+    const int chartLimit = chartLimitCombo_->currentData().toInt();
+    if (chartLimit > 0 &&
+        chartRecords.size() > static_cast<std::size_t>(chartLimit)) {
+        chartRecords.resize(static_cast<std::size_t>(chartLimit));
+    }
+
+    currentBars_.clear();
+    currentBars_.reserve(chartRecords.size());
+    for (const BatchResultRecord& record : chartRecords) {
+        currentBars_.push_back(ChartBar{chartLabel(record), metricValue(record, metric)});
+    }
     chart_->setBars(currentBars_);
     updateSummaryCards();
     populateTable(visibleRecords_);
